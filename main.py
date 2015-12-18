@@ -8,16 +8,16 @@ from numpy import pi
 TWOPI = pi*2.
 
 NMAX = 10**6
-SIZE = 1000
+SIZE = 1400
 ONE = 1./SIZE
 
-INIT_NUM = 4000
+INIT_NUM = 20000
 INIT_RAD = 0.4
-INIT_DST = 5*ONE
+INIT_DST = 2*ONE
 
 MID = 0.5
 
-LINEWIDTH = 5.*ONE
+LINEWIDTH = ONE*2
 
 BACK = [1,1,1,1]
 FRONT = [0,0,0,5]
@@ -25,45 +25,47 @@ RED = [1,0,0,0.3]
 BLUE = [0,0,1,0.3]
 
 
+i = 0
+
 
 def show(render,f):
 
   sources = f.sources
 
-  render.ctx.set_source_rgba(*FRONT)
-
   render.clear_canvas()
+
+  render.ctx.set_source_rgba(*RED)
 
   for s in sources:
 
     render.circle(*s, r=ONE, fill=True)
 
-  render.ctx.set_source_rgba(*BLUE)
+  render.ctx.set_source_rgba(*FRONT)
 
-  for cracks in f.cracks:
+  for fractures in f.old_fractures:
 
-    s,_ = cracks[0]
-    # render.ctx.move_to(*sources[s,:].flatten())
-    render.circle(*sources[s,:].flatten(), r=3*ONE, fill=True)
+    s,_ = fractures[0]
+    render.ctx.move_to(*sources[s,:].flatten())
 
-    render.ctx.set_source_rgba(*RED)
-
-    for c,_ in cracks[1:]:
-      # render.ctx.line_to(*sources[c,:].flatten())
-      render.circle(*sources[c,:].flatten(), r=3*ONE, fill=True)
-      # print(*sources[s,:].flatten())
+    for c,_ in fractures[1:]:
+      render.ctx.line_to(*sources[c,:].flatten())
 
     render.ctx.stroke()
 
 
 def step(f):
 
-  f.fracture()
+  global i
+  i += 1
 
-  return True
+  res = f.fracture()
 
+  if i % 1 == 0:
+    print('asdfasdf')
+    f.make_fracture_from_old()
 
-i = 0
+  return res
+
 
 def main():
 
@@ -79,8 +81,8 @@ def main():
 
     global i
 
-    res = step(F)
     show(render,F)
+    res = step(F)
 
     i += 1
 
