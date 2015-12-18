@@ -11,12 +11,12 @@ NMAX = 10**6
 SIZE = 1400
 ONE = 1./SIZE
 
-INIT_NUM = 30000
+INIT_NUM = 20000
 INIT_RAD = 0.4
-INIT_DST = 2*ONE
+INIT_DST = 1*ONE
 
-CRACK_DOT = 0.95
-CRACK_DST = INIT_RAD*4
+CRACK_DOT = 0.93
+CRACK_DST = INIT_RAD*3
 
 MID = 0.5
 
@@ -45,9 +45,9 @@ def show(render,f):
       render.ctx.stroke()
 
   render.clear_canvas()
-  render.ctx.set_source_rgba(*RED)
-  for s in sources:
-    render.circle(*s, r=ONE, fill=True)
+  # render.ctx.set_source_rgba(*RED)
+  # for s in sources:
+    # render.circle(*s, r=ONE, fill=True)
 
   render.ctx.set_source_rgba(*FRONT)
   lines(f.fractures + f.old_fractures)
@@ -60,8 +60,7 @@ def step(f):
 
   res = f.fracture()
 
-  if i % 1 == 0:
-    print('asdfasdf')
+  for _ in xrange(10):
     f.make_fracture_from_old()
 
   return res
@@ -71,11 +70,13 @@ def main():
 
   import gtk
   from render.render import Animate
-
+  from numpy.random import random
   from modules.fracture import Fracture
 
   F = Fracture(INIT_NUM, INIT_RAD, INIT_DST, CRACK_DOT, CRACK_DST)
 
+  for _ in xrange(1):
+    F.blow(1, random(size=2))
 
   def wrap(render):
 

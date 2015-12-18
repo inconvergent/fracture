@@ -2,6 +2,11 @@
 
 from numpy import pi
 from numpy import array
+from numpy.random import random
+from numpy.random import randint
+from numpy import cos
+from numpy import sin
+from numpy import arctan2
 
 TWOPI = pi*2
 HPI = pi*0.5
@@ -26,15 +31,16 @@ class Fracture(object):
     self.fractures = []
     self.old_fractures = []
 
-    self.hit = set()
+    self.hit = {}
 
     self.__make_sources()
 
-    self.make_fracture(x=array([0.5,0.5]), dx=array([0.0,1.0]))
-    self.make_fracture(x=array([0.5,0.5]), dx=array([0.0,-1.0]))
+  def blow(self,n=5,x=array([0.5,0.5])):
 
-    self.make_fracture(x=array([0.5,0.5]), dx=array([1.0,0.0]))
-    self.make_fracture(x=array([0.5,0.5]), dx=array([-1.0,0.0]))
+    for a in random(size=n)*TWOPI:
+
+      dx = array([cos(a), sin(a)])
+      self.make_fracture(x=x, dx=dx)
 
   def __make_sources(self):
 
@@ -54,22 +60,20 @@ class Fracture(object):
 
   def make_fracture_from_old(self):
 
-    from numpy.random import randint
-    from numpy.random import random
-    from numpy import cos
-    from numpy import sin
-
-    cands = array(list(self.hit))
+    cands = array(self.hit.keys())
     i = cands[randint(len(cands))]
-    x = self.sources[i,:]
-    a = random()*TWOPI
+
+    dx = self.hit[i]
+    a = arctan2(dx[1], dx[0]) + (-1)**randint(2) * HPI
     dx = array([cos(a), sin(a)])
+
+    x = self.sources[i,:]
+    # a = random()*TWOPI
+    # dx = array([cos(a), sin(a)])
     self.make_fracture(x=x, dx=dx)
 
   def fracture(self):
 
-    from numpy import arctan2
-    from numpy import logical_and
     from numpy import arange
     from numpy import reshape
     from numpy import abs
@@ -84,9 +88,11 @@ class Fracture(object):
 
     for i in range(len(self.fractures)):
 
+      fraci = self.fractures[i]
+
       try:
 
-        p,dx = self.fractures[i][-1]
+        p,dx = fraci[-1]
         dx = dx.reshape((1,2))
         px = sources[p,:]
 
@@ -115,20 +121,16 @@ class Fracture(object):
           raise ValueError
 
       except ValueError:
-
         pass
 
       else:
 
         h = near[ind]
+        fraci.append((h, masked_diff[mp,:]))
 
-        if h in self.hit:
-          continue
-
-        self.fractures[i].append((h, masked_diff[mp,:]))
-        print(mp, m, near[ind])
-        keep.add(i)
-        self.hit.add(h)
+        if not h in self.hit:
+          keep.add(i)
+          self.hit[h] = masked_diff[mp,:]
 
     fracs = []
     for i,c in enumerate(self.fractures):
