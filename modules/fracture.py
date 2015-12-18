@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
 
+from numpy import pi
+
+TWOPI = pi*2
+HPI = pi*0.5
+
 class Fracture(object):
 
   def __init__(
@@ -7,14 +12,14 @@ class Fracture(object):
       init_num, 
       init_rad, 
       init_dst=0.0, 
-      crack_angle=0.3,
-      crack_dst=0.1
+      crack_dot=0.9,
+      crack_dst=0.05
       ):
 
     self.init_num = init_num
     self.init_rad = init_rad
     self.init_dst = init_dst
-    self.crack_angle = crack_angle
+    self.crack_dot = crack_dot
     self.crack_dst = crack_dst
 
     self.cracks = []
@@ -36,36 +41,69 @@ class Fracture(object):
 
   def __make_cracks(self):
 
-    _,p = self.tree.query([0.5,0.5], 1)
-    self.cracks.append([(p, 0.0)])
+    from numpy import array
 
-  def crack(self):
+    _,p = self.tree.query([0.5,0.5], 1)
+    self.cracks.append([(p, array([0.0,1.0]))])
+
+  def fracture(self):
 
     from numpy import arctan2
     from numpy import logical_and
+    from numpy import arange
+    from numpy import array
+    from numpy import reshape
+    from numpy import abs
+    from numpy.linalg import norm
 
     query = self.tree.query_ball_point
     sources = self.sources
     crack_dst = self.crack_dst
-    ca = self.crack_angle*0.5
+    dl = self.crack_dot
 
-    for i,c in enumerate(self.cracks):
+    keep = set()
 
-      if c:
+    for i in range(len(self.cracks)):
 
-        p,a = c.pop()
+      try:
+
+        p,dx = self.cracks[i][-1]
+        dx = dx.reshape((1,2))
         px = sources[p,:]
 
         near = query(px, crack_dst)
-        dd = px - sources[near,:]
+        diff = sources[near,:] - px
+        nrm = norm(diff,axis=1).reshape((-1,1))
 
-        aa = arctan2(dd[:,1], dd[:,0])
+        zeromask = nrm<=0
+        nrm[zeromask] = 1000.0
 
-        mask = logical_and(
-          aa>a-ca,
-          aa<a+ca
-        )
-        print(p,a, near, dd, aa, mask)
+        diff /= nrm
 
-    return
+        dot = (dx * diff).sum(axis=1)
+        mask = dot>dl
+
+        masked_arange = arange(len(mask))[mask]
+        masked_sources = sources[mask,:]
+        masked_diff = diff[mask]
+        masked_nrm = nrm[mask]
+
+        mp = masked_nrm.argmin()
+        m = masked_nrm[mp]
+        ind = masked_arange[mp]
+
+        if m<=0.0 or m>1.0:
+          raise ValueError
+
+      except ValueError:
+
+        pass
+
+      else:
+
+        self.cracks[i].append((near[ind], masked_diff[mp,:]))
+        print(mp, m, near[ind])
+        keep.add(i)
+
+    self.cracks = [c for i,c in enumerate(self.cracks) if i in keep]
 
