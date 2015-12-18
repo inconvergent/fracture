@@ -11,9 +11,12 @@ NMAX = 10**6
 SIZE = 1400
 ONE = 1./SIZE
 
-INIT_NUM = 20000
+INIT_NUM = 30000
 INIT_RAD = 0.4
 INIT_DST = 2*ONE
+
+CRACK_DOT = 0.95
+CRACK_DST = INIT_RAD*4
 
 MID = 0.5
 
@@ -32,25 +35,22 @@ def show(render,f):
 
   sources = f.sources
 
+  def lines(fractures):
+
+    for frac in fractures:
+      s,_ = frac[0]
+      render.ctx.move_to(*sources[s,:].flatten())
+      for c,_ in frac[1:]:
+        render.ctx.line_to(*sources[c,:].flatten())
+      render.ctx.stroke()
+
   render.clear_canvas()
-
   render.ctx.set_source_rgba(*RED)
-
   for s in sources:
-
     render.circle(*s, r=ONE, fill=True)
 
   render.ctx.set_source_rgba(*FRONT)
-
-  for fractures in f.old_fractures:
-
-    s,_ = fractures[0]
-    render.ctx.move_to(*sources[s,:].flatten())
-
-    for c,_ in fractures[1:]:
-      render.ctx.line_to(*sources[c,:].flatten())
-
-    render.ctx.stroke()
+  lines(f.fractures + f.old_fractures)
 
 
 def step(f):
@@ -74,7 +74,7 @@ def main():
 
   from modules.fracture import Fracture
 
-  F = Fracture(INIT_NUM, INIT_RAD, INIT_DST)
+  F = Fracture(INIT_NUM, INIT_RAD, INIT_DST, CRACK_DOT, CRACK_DST)
 
 
   def wrap(render):
