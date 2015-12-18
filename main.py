@@ -8,22 +8,22 @@ from numpy import pi
 TWOPI = pi*2.
 
 NMAX = 10**6
-SIZE = 1400
+SIZE = 1500
 ONE = 1./SIZE
 
 INIT_NUM = 20000
-INIT_RAD = 0.4
+INIT_RAD = 0.45
 INIT_DST = 1*ONE
 
-CRACK_DOT = 0.93
-CRACK_DST = INIT_RAD*3
+CRACK_DOT = 0.90
+CRACK_DST = INIT_RAD*4
 
 MID = 0.5
 
-LINEWIDTH = ONE*2
+LINEWIDTH = ONE*1.1
 
 BACK = [1,1,1,1]
-FRONT = [0,0,0,5]
+FRONT = [0,0,0,0.9]
 RED = [1,0,0,0.3]
 BLUE = [0,0,1,0.3]
 
@@ -60,7 +60,7 @@ def step(f):
 
   res = f.fracture()
 
-  for _ in xrange(10):
+  for _ in xrange(40):
     f.make_fracture_from_old()
 
   return res
