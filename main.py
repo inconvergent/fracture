@@ -59,6 +59,8 @@ def step(fractures):
 
   from modules.utils import export_svg
 
+  fractures.print_stats()
+
   res = fractures.step()
 
   for _ in xrange(30):

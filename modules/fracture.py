@@ -53,6 +53,7 @@ class Fracture(object):
     masked_nrm = nrm[mask]
 
     if len(masked_nrm)<1:
+      self.alive = False
       return
 
     mp = masked_nrm.argmin()
@@ -60,6 +61,7 @@ class Fracture(object):
     ind = nonz[mp]
 
     if m<=0.0 or m>1.0:
+      self.alive = False
       return
 
     h = near[ind]
@@ -160,4 +162,10 @@ class Fractures(object):
       paths.append(path)
 
     return paths
+
+  def print_stats(self):
+
+    alive = len(self.alive_fractures)
+    dead = len(self.dead_fractures)
+    print('a: {:d} d: {:d}\n'.format(alive, dead))
 
