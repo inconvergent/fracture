@@ -13,10 +13,11 @@ ONE = 1./SIZE
 
 INIT_NUM = 10000
 INIT_RAD = 0.45
-INIT_DST = 1*ONE
 
-FRAC_DOT = 0.99
-FRAC_DST = INIT_RAD*4
+SOURCE_DST = 2*ONE
+
+FRAC_DOT = 0.92
+FRAC_DST = SOURCE_DST*100
 
 MID = 0.5
 
@@ -63,7 +64,7 @@ def step(fractures):
 
   res = fractures.step()
 
-  for _ in xrange(30):
+  for _ in xrange(5):
     fractures.make_random_fracture()
 
   paths = fractures.get_fracture_paths()
@@ -81,7 +82,7 @@ def main():
   from numpy.random import random
   from modules.fracture import Fractures
 
-  F = Fractures(INIT_NUM, INIT_RAD, INIT_DST, FRAC_DOT, FRAC_DST)
+  F = Fractures(INIT_NUM, INIT_RAD, SOURCE_DST, FRAC_DOT, FRAC_DST)
 
   ## init
   for _ in xrange(1):

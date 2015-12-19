@@ -19,16 +19,23 @@ class Fracture(object):
   def __init__(self, fractures, start, dx):
     
     self.fractures = fractures
+    self.query = fractures.tree.query_ball_point
+    self.sources = fractures.sources
     self.start = start
     self.inds = [start]
     self.dxs = [dx]
     self.alive = True
 
+  def __find_near_fractures(self,h):
+
+    x = self.sources[h,:]
+    near = self.query(x, self.fractures.frac_dst)
+    # print(len(near))
+
   def step(self):
 
     fractures = self.fractures
-    sources= fractures.sources
-    query = fractures.tree.query_ball_point
+    sources = self.sources
     frac_dst = fractures.frac_dst
     dt = fractures.frac_dot
     hit = fractures.hit
@@ -37,7 +44,7 @@ class Fracture(object):
     dx = self.dxs[-1].reshape((1,2))
     px = sources[p,:]
 
-    near = query(px, frac_dst)
+    near = self.query(px, frac_dst)
     diff = sources[near,:] - px
     nrm = norm(diff,axis=1).reshape((-1,1))
 
@@ -65,14 +72,18 @@ class Fracture(object):
       return
 
     h = near[ind]
+    dx = masked_diff[mp,:]
 
-    self.dxs.append(masked_diff[mp,:])
+    self.__find_near_fractures(h)
+
+    self.dxs.append(dx)
     self.inds.append(h)
 
     if not h in hit:
-      hit[h] = masked_diff[mp,:]
+      hit[h] = dx
     else:
       self.alive = False
+      return
 
 class Fractures(object):
 
@@ -80,14 +91,14 @@ class Fractures(object):
       self, 
       init_num, 
       init_rad, 
-      init_dst=0.0, 
+      source_dst=0.0, 
       frac_dot=0.95,
       frac_dst=0.05
       ):
 
     self.init_num = init_num
     self.init_rad = init_rad
-    self.init_dst = init_dst
+    self.source_dst = source_dst 
     self.frac_dot = frac_dot
     self.frac_dst = frac_dst
 
@@ -110,7 +121,7 @@ class Fractures(object):
     from scipy.spatial import cKDTree as kdt
     from utils import darts
 
-    sources = darts(self.init_num, 0.5, 0.5, self.init_rad, self.init_dst)
+    sources = darts(self.init_num, 0.5, 0.5, self.init_rad, self.source_dst)
     tree = kdt(sources)
     self.sources = sources
     self.tree = tree
