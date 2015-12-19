@@ -11,12 +11,12 @@ NMAX = 10**6
 SIZE = 1500
 ONE = 1./SIZE
 
-INIT_NUM = 20000
+INIT_NUM = 10000
 INIT_RAD = 0.45
 INIT_DST = 1*ONE
 
-CRACK_DOT = 0.90
-CRACK_DST = INIT_RAD*4
+FRAC_DOT = 0.90
+FRAC_DST = INIT_RAD*4
 
 MID = 0.5
 
@@ -25,22 +25,25 @@ LINEWIDTH = ONE*1.1
 BACK = [1,1,1,1]
 FRONT = [0,0,0,0.9]
 RED = [1,0,0,0.3]
+CYAN = [0,0.5,0.5,0.05]
 BLUE = [0,0,1,0.3]
 
 
 i = 0
 
 
-def show(render,f):
+def show(render,fractures):
 
-  sources = f.sources
+  sources = fractures.sources
 
-  def lines(fractures):
+  def lines(fracs):
 
-    for frac in fractures:
-      s,_ = frac[0]
-      render.ctx.move_to(*sources[s,:].flatten())
-      for c,_ in frac[1:]:
+    render.ctx.set_source_rgba(*FRONT)
+
+    for frac in fracs:
+      start = frac.inds[0]
+      render.ctx.move_to(*sources[start,:].flatten())
+      for c in frac.inds[1:]:
         render.ctx.line_to(*sources[c,:].flatten())
       render.ctx.stroke()
 
@@ -50,18 +53,25 @@ def show(render,f):
     # render.circle(*s, r=ONE, fill=True)
 
   render.ctx.set_source_rgba(*FRONT)
-  lines(f.fractures + f.old_fractures)
+  lines(fractures.alive_fractures + fractures.dead_fractures)
 
 
-def step(f):
+def step(fractures):
+
+  from modules.utils import export_svg
 
   global i
   i += 1
 
-  res = f.fracture()
+  res = fractures.step()
 
   for _ in xrange(40):
-    f.make_fracture_from_old()
+    fractures.make_fracture_from_old()
+
+  paths = fractures.get_fracture_paths()
+
+  fn = './res/asdf_{:05d}.svg'.format(i)
+  export_svg(fn, paths, SIZE)
 
   return res
 
@@ -71,9 +81,9 @@ def main():
   import gtk
   from render.render import Animate
   from numpy.random import random
-  from modules.fracture import Fracture
+  from modules.fracture import Fractures
 
-  F = Fracture(INIT_NUM, INIT_RAD, INIT_DST, CRACK_DOT, CRACK_DST)
+  F = Fractures(INIT_NUM, INIT_RAD, INIT_DST, FRAC_DOT, FRAC_DST)
 
   for _ in xrange(1):
     F.blow(1, random(size=2))

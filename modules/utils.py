@@ -18,8 +18,9 @@ def random_points_in_circle(n,xx,yy,rr):
   from numpy import pi
   from numpy.random import random
 
-  t = 2.*pi*random(n)
-  u = random(n)+random(n)
+  rnd = random(size=(n,3))
+  t = 2.*pi*rnd[:,0]
+  u = rnd[:,1:].sum(axis=1)
   r = zeros(n,'float')
   mask = u>1.
   xmask = logical_not(mask)
@@ -27,7 +28,6 @@ def random_points_in_circle(n,xx,yy,rr):
   r[xmask] = u[xmask]
   xyp = column_stack( (rr*r*cos(t),rr*r*sin(t)) )
   dartsxy  = xyp + array([xx,yy])
-
   return dartsxy
 
 def darts(n, xx, yy, rr, dst):
@@ -53,6 +53,25 @@ def darts(n, xx, yy, rr, dst):
       jj.append(j)
 
   res = dartsxy[array(jj,'int'),:]
-
   return res
+
+def export_svg(fn, paths, size):
+
+  from cairo import SVGSurface, Context
+  from numpy import array
+
+  one = 1.0/size
+  s = SVGSurface(fn, size, size)
+  c = Context(s)
+
+  c.set_line_width(0.1)
+
+  for path in paths: 
+    path *= size
+
+    c.new_path()
+    c.move_to(*path[0,:])
+    for p in path[1:]:
+      c.line_to(*p)
+    c.stroke()
 
