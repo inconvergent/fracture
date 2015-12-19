@@ -33,50 +33,44 @@ class Fracture(object):
     dt = fractures.frac_dot
     hit = fractures.hit
 
-    try:
+    p = self.inds[-1]
+    dx = self.dxs[-1].reshape((1,2))
+    px = sources[p,:]
 
-      p = self.inds[-1]
-      dx = self.dxs[-1].reshape((1,2))
-      px = sources[p,:]
+    near = query(px, frac_dst)
+    diff = sources[near,:] - px
+    nrm = norm(diff,axis=1).reshape((-1,1))
 
-      near = query(px, frac_dst)
-      diff = sources[near,:] - px
-      nrm = norm(diff,axis=1).reshape((-1,1))
+    nrm[nrm<=0] = 1e10
+    diff /= nrm
 
-      zeromask = nrm<=0
-      nrm[zeromask] = 1000.0
+    dot = (dx * diff).sum(axis=1)
+    mask = dot>dt
 
-      diff /= nrm
+    nonz = mask.nonzero()[0]
+    masked_sources = sources[mask,:]
+    masked_diff = diff[mask]
+    masked_nrm = nrm[mask]
 
-      dot = (dx * diff).sum(axis=1)
-      mask = dot>dt
+    if len(masked_nrm)<1:
+      return
 
-      masked_arange = arange(len(mask))[mask]
-      masked_sources = sources[mask,:]
-      masked_diff = diff[mask]
-      masked_nrm = nrm[mask]
+    mp = masked_nrm.argmin()
+    m = masked_nrm[mp]
+    ind = nonz[mp]
 
-      mp = masked_nrm.argmin()
-      m = masked_nrm[mp]
-      ind = masked_arange[mp]
+    if m<=0.0 or m>1.0:
+      return
 
-      if m<=0.0 or m>1.0:
-        raise ValueError
+    h = near[ind]
 
-    except ValueError:
-      pass
+    self.dxs.append(masked_diff[mp,:])
+    self.inds.append(h)
 
+    if not h in hit:
+      hit[h] = masked_diff[mp,:]
     else:
-
-      h = near[ind]
-
-      self.dxs.append(masked_diff[mp,:])
-      self.inds.append(h)
-
-      if not h in hit:
-        hit[h] = masked_diff[mp,:]
-      else:
-        self.alive = False
+      self.alive = False
 
 class Fractures(object):
 
@@ -107,7 +101,7 @@ class Fractures(object):
     for a in random(size=n)*TWOPI:
 
       dx = array([cos(a), sin(a)])
-      self.make_fracture(x=x, dx=dx)
+      self.__make_fracture(x=x, dx=dx)
 
   def __make_sources(self):
 
@@ -119,22 +113,28 @@ class Fractures(object):
     self.sources = sources
     self.tree = tree
 
-  def make_fracture(self, x, dx):
+  def __make_fracture(self, x, dx):
 
     _,p = self.tree.query(x,1)
     self.alive_fractures.append(Fracture(self,p,dx))
 
-  def make_fracture_from_old(self):
+  def make_random_fracture(self):
 
+    # a = arctan2(dx[1], dx[0]) + (-1)**randint(2) * HPI
     cands = array(self.hit.keys())
     i = cands[randint(len(cands))]
 
     dx = self.hit[i]
-    a = arctan2(dx[1], dx[0]) + (-1)**randint(2) * HPI
-    dx = array([cos(a), sin(a)])
-
+    a = arctan2(dx[1], dx[0])
     x = self.sources[i,:]
-    self.make_fracture(x=x, dx=dx)
+
+    a1 = a - HPI
+    dx1 = array([cos(a1), sin(a1)])
+    self.__make_fracture(x=x, dx=dx1)
+
+    a2 = a + HPI
+    dx2 = array([cos(a2), sin(a2)])
+    self.__make_fracture(x=x, dx=dx2)
 
   def step(self):
 
