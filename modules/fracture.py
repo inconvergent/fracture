@@ -186,32 +186,21 @@ class Fractures(object):
       self.alive_fractures.append(f)
     return res
 
-  def make_random_alive_fracture(self):
+  def make_random_alive_fracture(self, i, angle=0.3):
 
     if not self.alive_fractures:
       return False
-
-    cands = arange(len(self.alive_fractures))
-    i = cands[randint(len(cands))]
 
     dx = self.alive_fractures[i].dxs[-1]
     a = arctan2(dx[1], dx[0])
     x = self.sources[self.alive_fractures[i].inds[-1],:]
 
-    # a1 = a + (0.5-random()) * pi
-    if random()<0.5:
-      a1 = a - HPI + (0.5-random()) * 0.3
-    else:
-      a1 = a + HPI + (0.5-random()) * 0.3
-    dx1 = array([cos(a1), sin(a1)])
+    a1 = a + (-1)**randint(2)*HPI + (0.5-random()) * angle
+    return self.__make_fracture(x=x, dx=array([cos(a1), sin(a1)]))
 
-    return self.__make_fracture(x=x, dx=dx1)
+  def make_random_fracture(self, i):
 
-  def make_random_fracture(self):
-
-    cands = array(self.hit.keys())
-    i = cands[randint(len(cands))]
-
+    ## i ∈ self.sources
     dx = self.hit[i]
     a = arctan2(dx[1], dx[0])
     x = self.sources[i,:]

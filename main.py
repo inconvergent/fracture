@@ -46,12 +46,12 @@ def show(render,fractures):
 
   render.clear_canvas()
 
-  render.ctx.set_source_rgba(*RED)
-  draw_sources()
+  # render.ctx.set_source_rgba(*RED)
+  # draw_sources()
 
-  render.ctx.set_source_rgba(*CYAN)
-  render.set_line_width(LINEWIDTH*6)
-  draw_lines(fractures.alive_fractures + fractures.dead_fractures)
+  # render.ctx.set_source_rgba(*CYAN)
+  # render.set_line_width(LINEWIDTH*6)
+  # draw_lines(fractures.alive_fractures + fractures.dead_fractures)
 
   render.ctx.set_source_rgba(*FRONT)
   render.set_line_width(LINEWIDTH)
@@ -72,8 +72,8 @@ def step(fractures):
   if not fractures.alive_fractures:
     return False
   count = 0 
-  for _ in xrange(100):
-    spawned = fractures.make_random_alive_fracture()
+  for i in xrange(len(fractures.alive_fractures)):
+    spawned = fractures.make_random_alive_fracture(i)
     if spawned:
       count += 1
   print('spawned: {:d}'.format(count))
