@@ -21,9 +21,9 @@ class Fracture(object):
 
     self.i = 0
     self.fractures = fractures
-    self.query = fractures.tree.query_ball_point
-    self.sources = fractures.sources
-    self.hit = fractures.hit
+    self.tree = fractures.tree
+
+    self.hit = set([start])
     self.start = start
     self.inds = [start]
     self.dxs = [dx]
@@ -35,11 +35,14 @@ class Fracture(object):
     from numpy import logical_not
     from operator import itemgetter
 
-    sources = self.sources
+    sources = self.fractures.sources
 
     cx = sources[c,:]
     hx = sources[h,:]
-    u = array(self.query(0.5*(hx+cx), self.fractures.frac_dst),'int')
+    u = array(
+      self.tree.query_ball_point(0.5*(hx+cx), 
+      self.fractures.frac_dst),'int'
+    )
 
     uc = norm(cx-sources[u,:], axis=1)
     uh = norm(hx-sources[u,:], axis=1)
@@ -51,24 +54,24 @@ class Fracture(object):
     a = set(u[logical_not(mask)])
     b = set([c,h])
     relative_neigh_sources = a.difference(b)
-    relative_neigh_sources_hit = relative_neigh_sources.intersection(self.hit)
+    relative_neigh_sources_hit = relative_neigh_sources.intersection(
+      self.fractures.hit
+    )
 
     if relative_neigh_sources_hit:
       rnh = [ (r, norm(sources[r,:]-cx)) for r in relative_neigh_sources_hit]
       rnh.sort(key=itemgetter(1))
-      v = rnh[0][0]
+      return rnh[0][0]
 
     else:
-      v = -1
-
-    return v
+      return -1
 
   def step(self):
 
     self.i += 1
 
     fractures = self.fractures
-    sources = self.sources
+    sources = fractures.sources
     frac_dst = fractures.frac_dst
     dt = fractures.frac_dot
     hit = fractures.hit
@@ -78,7 +81,7 @@ class Fracture(object):
     dx = self.dxs[-1].reshape((1,2))
     cx = sources[c,:]
 
-    near = self.query(cx, frac_dst)
+    near = self.tree.query_ball_point(cx, frac_dst)
     diff = sources[near,:] - cx
     nrm = norm(diff,axis=1).reshape((-1,1))
 
@@ -95,7 +98,7 @@ class Fracture(object):
 
     if len(masked_nrm)<1:
       self.alive = False
-      return
+      return False
 
     mp = masked_nrm.argmin()
     m = masked_nrm[mp]
@@ -103,7 +106,7 @@ class Fracture(object):
 
     if m<=0.0 or m>1.0:
       self.alive = False
-      return
+      return False
 
     h = near[ind]
     dx = masked_diff[mp,:]
@@ -113,18 +116,23 @@ class Fracture(object):
       self.alive = False
       self.dxs.append(dx)
       self.inds.append(collide)
-      return
+      return False
 
     self.dxs.append(dx)
     self.inds.append(h)
 
+    if h in self.hit:
+      print('warning')
+    self.hit.add(h)
 
     if not h in hit:
       hit[h] = dx
       count[h] += 1
     else:
       self.alive = False
-      return
+      return False
+
+    return True 
 
 class Fractures(object):
 
@@ -172,9 +180,16 @@ class Fractures(object):
 
     _,p = self.tree.query(x,1)
     self.count[p] += 1
-    self.alive_fractures.append(Fracture(self,p,dx))
+    f = Fracture(self,p,dx)
+    res = f.step()
+    if res:
+      self.alive_fractures.append(f)
+    return res
 
   def make_random_alive_fracture(self):
+
+    if not self.alive_fractures:
+      return False
 
     cands = arange(len(self.alive_fractures))
     i = cands[randint(len(cands))]
@@ -189,7 +204,8 @@ class Fractures(object):
     else:
       a1 = a + HPI + (0.5-random()) * 0.3
     dx1 = array([cos(a1), sin(a1)])
-    self.__make_fracture(x=x, dx=dx1)
+
+    return self.__make_fracture(x=x, dx=dx1)
 
   def make_random_fracture(self):
 
@@ -205,7 +221,9 @@ class Fractures(object):
     else:
       a1 = a + HPI
     dx1 = array([cos(a1), sin(a1)])
-    self.__make_fracture(x=x, dx=dx1)
+
+    return self.__make_fracture(x=x, dx=dx1)
+
 
   def step(self):
 
@@ -217,7 +235,10 @@ class Fractures(object):
       if f.alive:
         fracs.append(f)
       else:
-        self.dead_fractures.append(f)
+        if len(f.inds)>1:
+          self.dead_fractures.append(f)
+        else:
+          print('discarding path')
 
     self.alive_fractures = fracs
     return len(fracs)>0
@@ -240,5 +261,7 @@ class Fractures(object):
 
     alive = len(self.alive_fractures)
     dead = len(self.dead_fractures)
-    print('a: {:d} d: {:d} s: {:d}\n'.format(alive, dead, len(self.sources)))
+    print('a: {:d} d: {:d} s: {:d}\n'
+      .format(alive, dead, len(self.sources))
+    )
 

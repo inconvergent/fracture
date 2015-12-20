@@ -3,9 +3,7 @@
 
 from __future__ import print_function
 
-from numpy import pi
-
-TWOPI = pi*2.
+import gtk
 
 NMAX = 10**6
 SIZE = 1500
@@ -48,8 +46,8 @@ def show(render,fractures):
 
   render.clear_canvas()
 
-  # render.ctx.set_source_rgba(*RED)
-  # draw_sources()
+  render.ctx.set_source_rgba(*RED)
+  draw_sources()
 
   render.ctx.set_source_rgba(*CYAN)
   render.set_line_width(LINEWIDTH*6)
@@ -71,20 +69,26 @@ def step(fractures):
   # for _ in xrange(100):
     # fractures.make_random_fracture()
 
-  for _ in xrange(5):
-    fractures.make_random_alive_fracture()
+  if not fractures.alive_fractures:
+    return False
+  count = 0 
+  for _ in xrange(100):
+    spawned = fractures.make_random_alive_fracture()
+    if spawned:
+      count += 1
+  print('spawned: {:d}'.format(count))
 
-  paths = fractures.get_fracture_paths()
-
-  fn = './res/asdf_{:05d}.svg'.format(fractures.i)
-  export_svg(fn, paths, SIZE)
+  # paths = fractures.get_fracture_paths()
+  # if fractures.i % 100 == 0:
+    # fn = './res/asdf_{:05d}.svg'.format(fractures.i)
+    # export_svg(fn, paths, SIZE)
 
   return res
 
 
+
 def main():
 
-  import gtk
   from render.render import Animate
   from numpy.random import random
   from modules.fracture import Fractures
@@ -101,6 +105,13 @@ def main():
     return step(F)
 
   render = Animate(SIZE, BACK, FRONT, wrap)
+
+  # def __write_svg_and_exit(*args):                                                                                                                                                                                                                                            
+    # from modules.utils import export_svg
+    # export_svg('./res/on_exit.svg', F.get_fracture_paths(), SIZE)
+    # gtk.main_quit(*args)
+  # render.window.connect("destroy", __write_svg_and_exit)
+
   gtk.main()
 
 
