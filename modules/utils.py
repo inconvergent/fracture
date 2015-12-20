@@ -16,6 +16,7 @@ def random_points_in_circle(n,xx,yy,rr):
   from numpy import sin
   from numpy import array
   from numpy import pi
+  from numpy import reshape
   from numpy.random import random
 
   rnd = random(size=(n,3))
@@ -26,7 +27,7 @@ def random_points_in_circle(n,xx,yy,rr):
   xmask = logical_not(mask)
   r[mask] = 2.-u[mask]
   r[xmask] = u[xmask]
-  xyp = column_stack( (rr*r*cos(t),rr*r*sin(t)) )
+  xyp = reshape(rr*r,(n,1))*column_stack( (cos(t),sin(t)) )
   dartsxy  = xyp + array([xx,yy])
   return dartsxy
 
@@ -37,22 +38,21 @@ def darts(n, xx, yy, rr, dst):
   than dst.
   """
 
-  from scipy.spatial import distance
   from numpy import array
-  cdist = distance.cdist
-
-  dartsxy = random_points_in_circle(n, xx, yy, rr)
-
-  jj = []
+  from scipy.spatial import cKDTree as kdt
 
   ## remove new nodes that are too close to other
   ## new nodes
-  dists = cdist(dartsxy,dartsxy,'euclidean')
-  for j in xrange(n-1):
-    if all( dists[j,j+1:] > dst ):
+
+  dartsxy = random_points_in_circle(n, xx, yy, rr)
+  tree = kdt(dartsxy)
+  near = tree.query_ball_point(dartsxy, dst)
+  jj = []
+  for j,n in enumerate(near):
+    if len(n)<2:
       jj.append(j)
 
-  res = dartsxy[array(jj,'int'),:]
+  res = dartsxy[jj,:]
   return res
 
 def export_svg(fn, paths, size):

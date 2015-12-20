@@ -11,21 +11,20 @@ NMAX = 10**6
 SIZE = 1500
 ONE = 1./SIZE
 
-INIT_NUM = 10000
+INIT_NUM = 100000
 INIT_RAD = 0.45
 
 SOURCE_DST = 2*ONE
 
-FRAC_DOT = 0.92
-FRAC_DST = SOURCE_DST*100
-
-MID = 0.5
+FRAC_DOT = 0.99
+FRAC_DST = 200*ONE
 
 LINEWIDTH = ONE*1.1
 
 BACK = [1,1,1,1]
-FRONT = [0,0,0,0.9]
-RED = [1,0,0,0.3]
+FRONT = [0,0,0,0.8]
+LIGHT = [0,0,0,0.2]
+RED = [1,0,0,0.1]
 CYAN = [0,0.5,0.5,0.05]
 BLUE = [0,0,1,0.3]
 
@@ -36,13 +35,11 @@ def show(render,fractures):
   sources = fractures.sources
 
   def draw_sources():
-    render.ctx.set_source_rgba(*RED)
     for s in sources:
       render.circle(*s, r=ONE, fill=True)
 
   def draw_lines(fracs):
 
-    render.ctx.set_source_rgba(*FRONT)
 
     for frac in fracs:
       start = frac.inds[0]
@@ -52,8 +49,18 @@ def show(render,fractures):
       render.ctx.stroke()
 
   render.clear_canvas()
+
+  # render.ctx.set_source_rgba(*RED)
+  # draw_sources()
   render.ctx.set_source_rgba(*FRONT)
+  render.set_line_width(LINEWIDTH)
   draw_lines(fractures.alive_fractures + fractures.dead_fractures)
+
+  render.ctx.set_source_rgba(*LIGHT)
+  render.set_line_width(LINEWIDTH*4)
+  draw_lines(fractures.alive_fractures + fractures.dead_fractures)
+
+  # raw_input()
 
 
 def step(fractures):
@@ -64,7 +71,7 @@ def step(fractures):
 
   res = fractures.step()
 
-  for _ in xrange(5):
+  for _ in xrange(100):
     fractures.make_random_fracture()
 
   paths = fractures.get_fracture_paths()
@@ -85,8 +92,8 @@ def main():
   F = Fractures(INIT_NUM, INIT_RAD, SOURCE_DST, FRAC_DOT, FRAC_DST)
 
   ## init
-  for _ in xrange(1):
-    F.blow(1, random(size=2))
+  for _ in xrange(3):
+    F.blow(10, random(size=2))
 
   def wrap(render):
 
@@ -94,7 +101,6 @@ def main():
     return step(F)
 
   render = Animate(SIZE, BACK, FRONT, wrap)
-  render.set_line_width(LINEWIDTH)
   gtk.main()
 
 
