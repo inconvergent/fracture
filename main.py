@@ -79,9 +79,8 @@ def step(fractures):
   print('spawned: {:d}'.format(count))
 
   # paths = fractures.get_fracture_paths()
-  # if fractures.i % 100 == 0:
-    # fn = './res/asdf_{:05d}.svg'.format(fractures.i)
-    # export_svg(fn, paths, SIZE)
+  # fn = './res/asdf_{:05d}.svg'.format(fractures.i)
+  # export_svg(fn, paths, SIZE)
 
   return res
 
@@ -106,11 +105,11 @@ def main():
 
   render = Animate(SIZE, BACK, FRONT, wrap)
 
-  # def __write_svg_and_exit(*args):                                                                                                                                                                                                                                            
-    # from modules.utils import export_svg
-    # export_svg('./res/on_exit.svg', F.get_fracture_paths(), SIZE)
-    # gtk.main_quit(*args)
-  # render.window.connect("destroy", __write_svg_and_exit)
+  def __write_svg_and_exit(*args):                                                                                                                                                                                                                                            
+    from modules.utils import export_svg
+    export_svg('./res/on_exit.svg', F.get_fracture_paths(), SIZE)
+    gtk.main_quit(*args)
+  render.window.connect("destroy", __write_svg_and_exit)
 
   gtk.main()
 

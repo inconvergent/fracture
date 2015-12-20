@@ -55,38 +55,67 @@ def darts(n, xx, yy, rr, dst):
   res = dartsxy[jj,:]
   return res
 
-def spatial_sort(paths):
+def spatial_sort(paths, init_rad=0.01):
 
   from numpy import row_stack
   from numpy import array
+  from numpy import zeros
+  from numpy.linalg import norm
   from scipy.spatial import cKDTree as kdt
 
+  num = len(paths)
+
   res = []
+
+  unsorted = set(range(2*num))
+
+  xs = zeros((2*num,2), 'float')
+  x_path = zeros(2*num, 'int')
+
+  for i, path in enumerate(paths):
+    xs[i,:] = path[0,:]
+    xs[num+i,:] = path[-1,:]
+
+    x_path[i] = i
+    x_path[num+i] = i
+
+  tree = kdt(xs)
+
+  count = 0
   pos = array([0,0],'float')
 
-  while paths:
+  while count<num:
 
-    x = []
-    x_path = []
-    for i, path in enumerate(paths):
-      x.append(path[0,:])
-      x.append(path[-1,:])
-      x_path.extend([i]*2)
+    rad = init_rad
+    while True:
 
-    xs = row_stack(x)
-    _,near = kdt(xs).query(pos, 1)
+      near = tree.query_ball_point(pos, rad)
+      cands = list(set(near).intersection(unsorted))
+      if not cands:
+        rad *= 2.0
+        continue
 
-    cp = x_path[near]
-    p = paths[cp]
-    if not near % 2 == 0:
-      ## if near is odd reverse path direction select pos accordingly
-      res.append(p[::-1])
-      pos = paths[cp][0,:]
+      dst = norm(pos - xs[cands,:], axis=1)
+      cp = dst.argmin()
+      uns = cands[cp]
+      break
+
+    path_ind = x_path[uns]
+    path = paths[path_ind]
+
+    if uns>=num:
+      res.append(path[::-1])
+      pos = paths[path_ind][0,:]
+      unsorted.remove(uns)
+      unsorted.remove(uns-num)
+
     else:
-      res.append(p)
-      pos = paths[cp][-1,:]
+      res.append(path)
+      pos = paths[path_ind][-1,:]
+      unsorted.remove(uns)
+      unsorted.remove(uns+num)
 
-    del(paths[cp])
+    count += 1
 
   return res
 
