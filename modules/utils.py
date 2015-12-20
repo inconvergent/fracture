@@ -55,6 +55,42 @@ def darts(n, xx, yy, rr, dst):
   res = dartsxy[jj,:]
   return res
 
+def spatial_sort(paths):
+
+  from numpy import row_stack
+  from numpy import array
+  from scipy.spatial import cKDTree as kdt
+
+  res = []
+  pos = array([0,0],'float')
+
+  while paths:
+
+    x = []
+    x_path = []
+    for i, path in enumerate(paths):
+      x.append(path[0,:])
+      x.append(path[-1,:])
+      x_path.extend([i]*2)
+
+    xs = row_stack(x)
+    _,near = kdt(xs).query(pos, 1)
+
+    cp = x_path[near]
+    p = paths[cp]
+    if not near % 2 == 0:
+      ## if near is odd reverse path direction select pos accordingly
+      res.append(p[::-1])
+      pos = paths[cp][0,:]
+    else:
+      res.append(p)
+      pos = paths[cp][-1,:]
+
+    del(paths[cp])
+
+  return res
+
+
 def export_svg(fn, paths, size):
 
   from cairo import SVGSurface, Context
@@ -65,6 +101,8 @@ def export_svg(fn, paths, size):
   c = Context(s)
 
   c.set_line_width(0.1)
+
+  paths = spatial_sort(paths)
 
   for path in paths: 
     path *= size

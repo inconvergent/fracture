@@ -174,6 +174,23 @@ class Fractures(object):
     self.count[p] += 1
     self.alive_fractures.append(Fracture(self,p,dx))
 
+  def make_random_alive_fracture(self):
+
+    cands = arange(len(self.alive_fractures))
+    i = cands[randint(len(cands))]
+
+    dx = self.alive_fractures[i].dxs[-1]
+    a = arctan2(dx[1], dx[0])
+    x = self.sources[self.alive_fractures[i].inds[-1],:]
+
+    # a1 = a + (0.5-random()) * pi
+    if random()<0.5:
+      a1 = a - HPI + (0.5-random()) * 0.3
+    else:
+      a1 = a + HPI + (0.5-random()) * 0.3
+    dx1 = array([cos(a1), sin(a1)])
+    self.__make_fracture(x=x, dx=dx1)
+
   def make_random_fracture(self):
 
     cands = array(self.hit.keys())
@@ -212,6 +229,8 @@ class Fractures(object):
     paths = []
 
     for f in self.alive_fractures + self.dead_fractures:
+      if len(f.inds)<2:
+        continue
       path = row_stack([self.sources[p,:] for p in f.inds])
       paths.append(path)
 

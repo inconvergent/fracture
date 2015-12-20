@@ -14,7 +14,7 @@ ONE = 1./SIZE
 INIT_NUM = 100000
 INIT_RAD = 0.45
 
-SOURCE_DST = 2*ONE
+SOURCE_DST = 1.5*ONE
 
 FRAC_DOT = 0.99
 FRAC_DST = 200*ONE
@@ -39,8 +39,6 @@ def show(render,fractures):
       render.circle(*s, r=ONE, fill=True)
 
   def draw_lines(fracs):
-
-
     for frac in fracs:
       start = frac.inds[0]
       render.ctx.move_to(*sources[start,:])
@@ -52,15 +50,14 @@ def show(render,fractures):
 
   # render.ctx.set_source_rgba(*RED)
   # draw_sources()
+
+  render.ctx.set_source_rgba(*CYAN)
+  render.set_line_width(LINEWIDTH*6)
+  draw_lines(fractures.alive_fractures + fractures.dead_fractures)
+
   render.ctx.set_source_rgba(*FRONT)
   render.set_line_width(LINEWIDTH)
   draw_lines(fractures.alive_fractures + fractures.dead_fractures)
-
-  render.ctx.set_source_rgba(*LIGHT)
-  render.set_line_width(LINEWIDTH*4)
-  draw_lines(fractures.alive_fractures + fractures.dead_fractures)
-
-  # raw_input()
 
 
 def step(fractures):
@@ -71,13 +68,16 @@ def step(fractures):
 
   res = fractures.step()
 
-  for _ in xrange(100):
-    fractures.make_random_fracture()
+  # for _ in xrange(100):
+    # fractures.make_random_fracture()
+
+  for _ in xrange(5):
+    fractures.make_random_alive_fracture()
 
   paths = fractures.get_fracture_paths()
 
-  # fn = './res/asdf_{:05d}.svg'.format(i)
-  # export_svg(fn, paths, SIZE)
+  fn = './res/asdf_{:05d}.svg'.format(fractures.i)
+  export_svg(fn, paths, SIZE)
 
   return res
 
