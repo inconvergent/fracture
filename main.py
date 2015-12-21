@@ -23,7 +23,7 @@ BACK = [1,1,1,1]
 FRONT = [0,0,0,0.8]
 LIGHT = [0,0,0,0.2]
 RED = [1,0,0,0.1]
-CYAN = [0,0.5,0.5,0.05]
+CYAN = [0,0.5,0.5,0.2]
 BLUE = [0,0,1,0.3]
 
 
@@ -52,24 +52,40 @@ def show(render,fractures):
   # render.ctx.set_source_rgba(*CYAN)
   # render.set_line_width(LINEWIDTH*6)
   # draw_lines(fractures.alive_fractures + fractures.dead_fractures)
+  render.ctx.set_source_rgba(*LIGHT)
+  render.set_line_width(LINEWIDTH*5)
+  draw_lines(fractures.alive_fractures + fractures.dead_fractures)
 
   render.ctx.set_source_rgba(*FRONT)
   render.set_line_width(LINEWIDTH)
   draw_lines(fractures.alive_fractures + fractures.dead_fractures)
 
+  for f in fractures.alive_fractures:
+    for s in sources[f.inds,:]:
+      render.circle(*s, r=2.5*ONE, fill=False)
+
+
+
 
 def step(fractures):
 
   from modules.utils import export_svg
+  from numpy import array
+  from numpy.random import randint
 
   fractures.print_stats()
 
   res = fractures.step()
 
-  # for _ in xrange(100):
-    # fractures.make_random_fracture()
+  # fractures.more_sources(2000)
+
+  # hit = array(list(fractures.hit), 'int')
+  # num = len(hit)
+  # for i in hit[randint(0,num,size=100)]:
+    # fractures.make_random_fracture(i)
 
   if not fractures.alive_fractures:
+
     return False
   count = 0 
   for i in xrange(len(fractures.alive_fractures)):

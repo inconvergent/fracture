@@ -5,7 +5,7 @@ from __future__ import division
 from __future__ import print_function
 
 
-def random_points_in_circle(n,xx,yy,rr):
+def random_points_in_circle(n, x, y, rad):
   """
   get n random points in a circle.
   """
@@ -27,33 +27,38 @@ def random_points_in_circle(n,xx,yy,rr):
   xmask = logical_not(mask)
   r[mask] = 2.-u[mask]
   r[xmask] = u[xmask]
-  xyp = reshape(rr*r,(n,1))*column_stack( (cos(t),sin(t)) )
-  dartsxy  = xyp + array([xx,yy])
+  xyp = reshape(rad*r,(n,1))*column_stack( (cos(t),sin(t)) )
+  dartsxy  = xyp + array([x,y])
   return dartsxy
 
-def darts(n, xx, yy, rr, dst):
+
+def darts(n, x, y, rad, dst, old_darts=None):
   """
   get at most n random, uniformly distributed, points in a circle.
-  centered at (xx,yy), with radius rr. points are no closer to each other
+  centered at (x,y), with radius rr. points are no closer to each other
   than dst.
   """
 
   from numpy import array
+  from numpy import zeros
+  from numpy import row_stack 
   from scipy.spatial import cKDTree as kdt
 
-  ## remove new nodes that are too close to other
-  ## new nodes
+  dartsxy = random_points_in_circle(n, x, y, rad)
+  jj = zeros(n,'bool')
 
-  dartsxy = random_points_in_circle(n, xx, yy, rr)
   tree = kdt(dartsxy)
-  near = tree.query_ball_point(dartsxy, dst)
-  jj = []
-  for j,n in enumerate(near):
-    if len(n)<2:
-      jj.append(j)
+  for j,near in enumerate(tree.query_ball_point(dartsxy, dst)):
+    if len(near)<2:
+      jj[j] = True
 
   res = dartsxy[jj,:]
+
+  if old_darts is not None:
+    return row_stack([old_darts, res])
+
   return res
+
 
 def spatial_sort(paths, init_rad=0.01):
 

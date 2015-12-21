@@ -39,9 +39,10 @@ class Fracture(object):
 
     cx = sources[c,:]
     hx = sources[h,:]
+    mid = 0.5*(hx+cx)
     u = array(
-      self.tree.query_ball_point(0.5*(hx+cx), 
-      self.fractures.frac_dst),'int'
+      self.tree.query_ball_point(mid,self.fractures.frac_dst),
+      'int'
     )
 
     uc = norm(cx-sources[u,:], axis=1)
@@ -52,14 +53,13 @@ class Fracture(object):
     mask = ch<mm
 
     a = set(u[logical_not(mask)])
-    b = set([c,h])
-    relative_neigh_sources = a.difference(b)
+    relative_neigh_sources = a.difference([c,h])
     relative_neigh_sources_hit = relative_neigh_sources.intersection(
       self.fractures.hit
     )
 
     if relative_neigh_sources_hit:
-      rnh = [ (r, norm(sources[r,:]-cx)) for r in relative_neigh_sources_hit]
+      rnh = [ (r, norm(sources[r,:]-mid)) for r in relative_neigh_sources_hit]
       rnh.sort(key=itemgetter(1))
       return rnh[0][0]
 
@@ -172,6 +172,23 @@ class Fractures(object):
     from utils import darts
 
     sources = darts(self.init_num, 0.5, 0.5, self.init_rad, self.source_dst)
+    tree = kdt(sources)
+    self.sources = sources
+    self.tree = tree
+
+  def more_sources(self,n):
+
+    from scipy.spatial import cKDTree as kdt
+    from utils import darts
+    
+    sources = darts(
+      n, 
+      0.5, 
+      0.5, 
+      self.init_rad, 
+      self.source_dst, 
+      self.sources
+    )
     tree = kdt(sources)
     self.sources = sources
     self.tree = tree
