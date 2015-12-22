@@ -66,7 +66,7 @@ class Fracture(object):
     else:
       return -1
 
-  def step(self):
+  def step(self, add_sources=False):
 
     self.i += 1
 
@@ -75,7 +75,6 @@ class Fracture(object):
     frac_dst = fractures.frac_dst
     dt = fractures.frac_dot
     hit = fractures.hit
-    count = fractures.count
 
     c = self.inds[-1]
     dx = self.dxs[-1].reshape((1,2))
@@ -114,25 +113,27 @@ class Fracture(object):
     collide = self.__find_near_fractures(c, h)
     if collide>-1:
       self.alive = False
-      self.dxs.append(dx)
-      self.inds.append(collide)
-      return False
+      h = collide
+
+    if not h in hit:
+      hit[h] = dx
+    else:
+      self.alive = False
 
     self.dxs.append(dx)
     self.inds.append(h)
 
-    if h in self.hit:
-      print('warning')
-    self.hit.add(h)
+    if add_sources:
+      diff = sources[h,:] - sources[c,:]
+      nrm = norm(diff)
+      source_dst = self.fractures.source_dst*5
+      d = arange(source_dst,nrm,source_dst)
+      new_sources = sources[c,:]+diff/nrm*reshape(d, (-1,1))
+      if len(new_sources)>0:
+        self.fractures.add_hit_sources(new_sources, dx)
+        # print(new_sources)
 
-    if not h in hit:
-      hit[h] = dx
-      count[h] += 1
-    else:
-      self.alive = False
-      return False
-
-    return True 
+    return self.alive
 
 class Fractures(object):
 
@@ -156,15 +157,14 @@ class Fractures(object):
     self.dead_fractures = []
 
     self.hit = {}
-    self.count = defaultdict(int)
 
     self.__make_sources()
 
-  def blow(self,n=5,x=array([0.5,0.5])):
+  def blow(self,n=5,x=array([0.5,0.5]), add_sources=False):
 
     for a in random(size=n)*TWOPI:
       dx = array([cos(a), sin(a)])
-      self.__make_fracture(x=x, dx=dx)
+      self.__make_fracture(x, dx, add_sources=add_sources)
 
   def __make_sources(self):
 
@@ -193,17 +193,35 @@ class Fractures(object):
     self.sources = sources
     self.tree = tree
 
-  def __make_fracture(self, x, dx):
+  def add_hit_sources(self, src, dx):
+
+    from numpy import row_stack
+    from scipy.spatial import cKDTree as kdt
+
+    sources = self.sources
+
+    n1 = len(sources)
+    sources = row_stack([sources, src])
+    n2 = len(sources)
+    tree = kdt(sources)
+
+    for n in range(n1,n2):
+      self.hit[n] = dx
+
+    # self.hit.update(range(n1,n2))
+    self.sources = sources
+    self.tree = tree
+
+  def __make_fracture(self, x, dx, add_sources=False):
 
     _,p = self.tree.query(x,1)
-    self.count[p] += 1
     f = Fracture(self,p,dx)
-    res = f.step()
+    res = f.step(add_sources)
     if res:
       self.alive_fractures.append(f)
     return res
 
-  def make_random_alive_fracture(self, i, angle=0.3):
+  def make_random_alive_fracture(self, i, angle=0.3, add_sources=False):
 
     if not self.alive_fractures:
       return False
@@ -213,31 +231,29 @@ class Fractures(object):
     x = self.sources[self.alive_fractures[i].inds[-1],:]
 
     a1 = a + (-1)**randint(2)*HPI + (0.5-random()) * angle
-    return self.__make_fracture(x=x, dx=array([cos(a1), sin(a1)]))
+    return self.__make_fracture(x, array([cos(a1), sin(a1)]), add_sources)
 
-  def make_random_fracture(self, i):
+  def make_random_fracture(self, i, angle=0, add_sources=False):
 
     ## i ∈ self.sources
     dx = self.hit[i]
     a = arctan2(dx[1], dx[0])
     x = self.sources[i,:]
 
-    if random()<0.5:
-      a1 = a - HPI
-    else:
-      a1 = a + HPI
+    # a1 = a + (-1)**randint(2)*HPI
+    a1 = a + (-1)**randint(2)*HPI + (0.5-random()) * angle
     dx1 = array([cos(a1), sin(a1)])
 
-    return self.__make_fracture(x=x, dx=dx1)
+    return self.__make_fracture(x, dx1, add_sources)
 
 
-  def step(self):
+  def step(self, add_sources=False):
 
     self.i += 1
 
     fracs = []
     for f in self.alive_fractures:
-      f.step()
+      f.step(add_sources)
       if f.alive:
         fracs.append(f)
       else:
