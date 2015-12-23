@@ -92,7 +92,6 @@ class Fracture(object):
     mask = dot>dt
 
     nonz = mask.nonzero()[0]
-    masked_sources = sources[mask,:]
     masked_diff = diff[mask]
     masked_nrm = nrm[mask]
 
