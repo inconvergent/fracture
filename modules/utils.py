@@ -4,6 +4,18 @@
 from __future__ import division
 from __future__ import print_function
 
+from numpy import cos
+from numpy import sin
+from numpy import array
+from numpy import arctan2
+from numpy.linalg import norm
+
+
+def get_angle(dx):
+  return arctan2(dx[1], dx[0])
+
+def get_dx(a):
+  return array([cos(a), sin(a)], 'float')
 
 def random_points_in_circle(n,xx,yy,rr):
   """
@@ -11,10 +23,8 @@ def random_points_in_circle(n,xx,yy,rr):
   """
 
   from numpy import zeros, logical_not
+  from numpy import logical_not
   from numpy import column_stack
-  from numpy import cos
-  from numpy import sin
-  from numpy import array
   from numpy import pi
   from numpy import reshape
   from numpy.random import random
@@ -38,7 +48,6 @@ def darts(n, xx, yy, rr, dst):
   than dst.
   """
 
-  from numpy import array
   from scipy.spatial import cKDTree as kdt
 
   ## remove new nodes that are too close to other
@@ -58,9 +67,7 @@ def darts(n, xx, yy, rr, dst):
 def spatial_sort(paths, init_rad=0.01):
 
   from numpy import row_stack
-  from numpy import array
   from numpy import zeros
-  from numpy.linalg import norm
   from scipy.spatial import cKDTree as kdt
 
   num = len(paths)
@@ -123,7 +130,6 @@ def spatial_sort(paths, init_rad=0.01):
 def export_svg(fn, paths, size):
 
   from cairo import SVGSurface, Context
-  from numpy import array
 
   one = 1.0/size
   s = SVGSurface(fn, size, size)

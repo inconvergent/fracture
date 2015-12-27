@@ -14,8 +14,9 @@ INIT_RAD = 0.45
 
 SOURCE_DST = 1.5*ONE
 
-FRAC_DOT = 0.99
-FRAC_DST = 200*ONE
+FRAC_DOT = 0.90
+FRAC_DST = 200.*ONE
+FRAC_STP = ONE*5
 
 LINEWIDTH = ONE*1.1
 
@@ -49,13 +50,13 @@ def show(render,fractures):
   # render.ctx.set_source_rgba(*RED)
   # draw_sources()
 
-  # render.ctx.set_source_rgba(*CYAN)
-  # render.set_line_width(LINEWIDTH*6)
-  # draw_lines(fractures.alive_fractures + fractures.dead_fractures)
-
   render.ctx.set_source_rgba(*FRONT)
   render.set_line_width(LINEWIDTH)
   draw_lines(fractures.alive_fractures + fractures.dead_fractures)
+
+  for f in fractures.alive_fractures:
+    for s in sources[f.inds,:]:
+      render.circle(*s, r=2*ONE, fill=False)
 
 
 def step(fractures):
@@ -69,14 +70,14 @@ def step(fractures):
   # for _ in xrange(100):
     # fractures.make_random_fracture()
 
-  if not fractures.alive_fractures:
-    return False
-  count = 0 
-  for i in xrange(len(fractures.alive_fractures)):
-    spawned = fractures.make_random_alive_fracture(i)
-    if spawned:
-      count += 1
-  print('spawned: {:d}'.format(count))
+  # if not fractures.alive_fractures:
+    # return False
+  # count = 0 
+  # for i in xrange(len(fractures.alive_fractures)):
+    # spawned = fractures.make_random_alive_fracture(i, 0.7)
+    # if spawned:
+      # count += 1
+  # print('spawned: {:d}'.format(count))
 
   # paths = fractures.get_fracture_paths()
   # fn = './res/asdf_{:05d}.svg'.format(fractures.i)
@@ -92,11 +93,19 @@ def main():
   from numpy.random import random
   from modules.fracture import Fractures
 
-  F = Fractures(INIT_NUM, INIT_RAD, SOURCE_DST, FRAC_DOT, FRAC_DST)
+  F = Fractures(
+    INIT_NUM, 
+    INIT_RAD, 
+    SOURCE_DST, 
+    FRAC_DOT, 
+    FRAC_DST, 
+    FRAC_STP
+  )
 
   ## init
-  for _ in xrange(3):
-    F.blow(10, random(size=2))
+  # for _ in xrange(3):
+  F.blow(10, random(size=2))
+  # F.blow(1)
 
   def wrap(render):
 
