@@ -4,11 +4,13 @@ from numpy import pi
 from numpy import array
 from numpy import arange
 from numpy import reshape
+from numpy import row_stack
 from numpy.random import random
 from numpy.random import randint
 from numpy.linalg import norm
 from numpy import cos
 from numpy import sin
+from numpy import arctan2
 from collections import defaultdict
 
 TWOPI = pi*2
@@ -17,8 +19,6 @@ HPI = pi*0.5
 class Fracture(object):
 
   def __init__(self, fractures, fid, start, dx):
-
-    print('int')
 
     self.i = 0
     self.fractures = fractures
@@ -68,7 +68,6 @@ class Fracture(object):
     # else:
       # return -1
 
-
   def step(self):
 
     self.i += 1
@@ -96,7 +95,7 @@ class Fracture(object):
 
     if mask.sum()<1:
       self.alive = False
-      print('no nearby sources')
+      # print('no nearby sources')
       return False
 
     masked_diff = neardiff[mask]
@@ -105,27 +104,27 @@ class Fracture(object):
     new_dx = (masked_diff/masked_nrm).sum(axis=0).flatten()
     new_dx /= norm(new_dx)
 
-    closest_ind = masked_nrm.argmin()
-    closest_nrm = masked_nrm[closest_ind]
+    ind = masked_nrm.argmin()
 
-    if closest_nrm<stp:
+    if masked_nrm[ind]<stp:
 
       nonz = mask.nonzero()[0]
-      h = near[nonz[closest_ind]]
+      h = near[nonz[ind]]
       
       # possible relative neigh test
-      if h in visited: # collision
+      if h in visited:
+        # collision
         self.alive = False
 
-      else: # no collision
+      else: 
+        # no collision
         self.alive = True
         visited[h] = new_dx
 
     else:
-
       # new source
       new_pos = cx + new_dx*fractures.frac_stp
-      h = self.fractures._add_source(new_pos)
+      h = self.fractures._add_tmp_source(new_pos)
       self.alive = True
       visited[h] = new_dx
 
@@ -166,9 +165,13 @@ class Fractures(object):
 
   def blow(self,n, x=array([0.5,0.5])):
 
+    self.tmp_sources = []
+
     for a in random(size=n)*TWOPI:
       dx = array([cos(a), sin(a)])
       self.__make_fracture(x, dx)
+
+    self._append_tmp_sources()
 
   def __make_sources(self):
 
@@ -182,17 +185,22 @@ class Fractures(object):
 
     return len(sources)
 
-  def _add_source(self, x):
+  def _add_tmp_source(self, x):
+
+    self.tmp_sources.append(x)
+    return len(self.sources)+len(self.tmp_sources)-1
+
+  def _append_tmp_sources(self):
 
     from scipy.spatial import cKDTree as kdt
-    from numpy import row_stack
 
-    sources = row_stack([self.sources, x])
+    sources = row_stack([self.sources]+self.tmp_sources)
     tree = kdt(sources)
     self.sources = sources
     self.tree = tree
+    self.tmp_sources = []
 
-    return len(sources)-1
+    return len(sources)
 
   def __make_fracture(self, x, dx):
 
@@ -216,9 +224,22 @@ class Fractures(object):
     a1 = a + (-1)**randint(2)*HPI + (0.5-random()) * angle
     return self.__make_fracture(x=x, dx=array([cos(a1), sin(a1)]))
 
+  def spawn(self, factor, angle=0.7):
+
+    self.tmp_sources = []
+
+    count = 0 
+    for i in (random(size=len(self.alive_fractures))<factor).nonzero()[0]:
+      count += int(self.make_random_alive_fracture(i, angle))
+
+    self._append_tmp_sources()
+
+    return count
+
   def step(self):
 
     self.i += 1
+
     self.tmp_sources = []
 
     fracs = []
@@ -233,11 +254,12 @@ class Fractures(object):
           print('discarding path')
 
     self.alive_fractures = fracs
+
+    self._append_tmp_sources()
+    
     return len(fracs)>0
 
   def get_fracture_paths(self):
-
-    from numpy import row_stack
 
     paths = []
 
@@ -253,7 +275,7 @@ class Fractures(object):
 
     alive = len(self.alive_fractures)
     dead = len(self.dead_fractures)
-    print('a: {:d} d: {:d} s: {:d}\n'
-      .format(alive, dead, len(self.sources))
+    print('# {:d} a: {:d} d: {:d} s: {:d}\n'
+      .format(self.i, alive, dead, len(self.sources))
     )
 

@@ -16,7 +16,7 @@ SOURCE_DST = 1.5*ONE
 
 FRAC_DOT = 0.90
 FRAC_DST = 200.*ONE
-FRAC_STP = ONE*5
+FRAC_STP = ONE*10
 
 LINEWIDTH = ONE*1.1
 
@@ -32,6 +32,8 @@ BLUE = [0,0,1,0.3]
 def show(render,fractures):
 
   sources = fractures.sources
+  alive_fractures = fractures.alive_fractures
+  dead_fractures = fractures.dead_fractures
 
   def draw_sources():
     for s in sources:
@@ -52,38 +54,12 @@ def show(render,fractures):
 
   render.ctx.set_source_rgba(*FRONT)
   render.set_line_width(LINEWIDTH)
-  draw_lines(fractures.alive_fractures + fractures.dead_fractures)
+  draw_lines(alive_fractures+dead_fractures)
 
-  for f in fractures.alive_fractures:
+
+  for f in alive_fractures:
     for s in sources[f.inds,:]:
       render.circle(*s, r=2*ONE, fill=False)
-
-
-def step(fractures):
-
-  from modules.utils import export_svg
-
-  fractures.print_stats()
-
-  res = fractures.step()
-
-  # for _ in xrange(100):
-    # fractures.make_random_fracture()
-
-  # if not fractures.alive_fractures:
-    # return False
-  # count = 0 
-  # for i in xrange(len(fractures.alive_fractures)):
-    # spawned = fractures.make_random_alive_fracture(i, 0.7)
-    # if spawned:
-      # count += 1
-  # print('spawned: {:d}'.format(count))
-
-  # paths = fractures.get_fracture_paths()
-  # fn = './res/asdf_{:05d}.svg'.format(fractures.i)
-  # export_svg(fn, paths, SIZE)
-
-  return res
 
 
 
@@ -103,14 +79,26 @@ def main():
   )
 
   ## init
-  # for _ in xrange(3):
-  F.blow(10, random(size=2))
-  # F.blow(1)
+  for _ in xrange(1):
+    F.blow(10, random(size=2))
 
   def wrap(render):
 
     show(render,F)
-    return step(F)
+    F.print_stats()
+    res = F.step()
+    n = F.spawn(factor=0.1, angle=0.7)
+    print('spawned: {:d}'.format(n))
+
+    # from modules.utils import export_svg
+    # paths = F.get_fracture_paths()
+    # fn = './res/asdf_{:05d}.svg'.format(F.i)
+    # export_svg(fn, paths, SIZE)
+
+    # fn = './asdf_{:05d}.png'.format(F.i)
+    # render.write_to_png(fn)
+
+    return res
 
   render = Animate(SIZE, BACK, FRONT, wrap)
 
