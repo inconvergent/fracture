@@ -15,8 +15,8 @@ INIT_RAD = 0.45
 SOURCE_DST = 1.5*ONE
 
 FRAC_DOT = 0.90
-FRAC_DST = 200.*ONE
-FRAC_STP = ONE*10
+FRAC_DST = 20.*ONE
+FRAC_STP = ONE*6
 
 LINEWIDTH = ONE*1.1
 
@@ -57,9 +57,9 @@ def show(render,fractures):
   draw_lines(alive_fractures+dead_fractures)
 
 
-  for f in alive_fractures:
-    for s in sources[f.inds,:]:
-      render.circle(*s, r=2*ONE, fill=False)
+  # for f in alive_fractures:
+    # for s in sources[f.inds,:]:
+      # render.circle(*s, r=2*ONE, fill=False)
 
 
 
@@ -87,7 +87,7 @@ def main():
     show(render,F)
     F.print_stats()
     res = F.step()
-    n = F.spawn(factor=0.1, angle=0.7)
+    n = F.spawn(factor=0.9, angle=0.7)
     print('spawned: {:d}'.format(n))
 
     # from modules.utils import export_svg
@@ -104,8 +104,9 @@ def main():
 
   def __write_svg_and_exit(*args):                                                                                                                                                                                                                                            
     from modules.utils import export_svg
-    export_svg('./res/on_exit.svg', F.get_fracture_paths(), SIZE)
     gtk.main_quit(*args)
+    render.write_to_png('./res/on_exit.png')
+    export_svg('./res/on_exit.svg', F.get_fracture_paths(), SIZE)
   render.window.connect("destroy", __write_svg_and_exit)
 
   gtk.main()

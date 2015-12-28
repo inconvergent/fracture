@@ -31,46 +31,47 @@ class Fracture(object):
 
     self.fid = fid
 
-  # def __find_near_fractures(self, c, h):
+  def __find_near_fractures(self, c, h):
 
-    # from numpy import column_stack
-    # from numpy import logical_not
-    # from operator import itemgetter
+    from numpy import column_stack
+    from numpy import logical_not
+    from operator import itemgetter
 
-    # sources = self.fractures.sources
+    sources = self.fractures.sources
 
-    # cx = sources[c,:]
-    # hx = sources[h,:]
-    # u = array(
-      # self.tree.query_ball_point(0.5*(hx+cx), 
-      # self.fractures.frac_dst),'int'
-    # )
+    cx = sources[c,:]
+    hx = sources[h,:]
+    u = array(
+      self.tree.query_ball_point(0.5*(hx+cx),self.fractures.frac_dst),
+      'int'
+    )
 
-    # uc = norm(cx-sources[u,:], axis=1)
-    # uh = norm(hx-sources[u,:], axis=1)
+    uc = norm(cx-sources[u,:], axis=1)
+    uh = norm(hx-sources[u,:], axis=1)
 
-    # ch = norm(cx-hx)
-    # mm = column_stack([uc,uh]).max(axis=1)
-    # mask = ch<mm
+    ch = norm(cx-hx)
+    mm = column_stack([uc,uh]).max(axis=1)
+    mask = ch<mm
 
-    # a = set(u[logical_not(mask)])
-    # b = set([c,h])
-    # relative_neigh_sources = a.difference(b)
-    # relative_neigh_sources_visited = relative_neigh_sources.intersection(
-      # self.fractures.visited
-    # )
+    a = set(u[logical_not(mask)])
+    b = set([c,h])
+    relative_neigh_sources = a.difference(b)
+    relative_neigh_sources_visited = relative_neigh_sources.intersection(
+      self.fractures.visited
+    )
 
-    # if relative_neigh_sources_visited:
-      # rnh = [ (r, norm(sources[r,:]-cx)) for r in relative_neigh_sources_visited]
-      # rnh.sort(key=itemgetter(1))
-      # return rnh[0][0]
+    if relative_neigh_sources_visited:
+      rnh = [ (r, norm(sources[r,:]-cx)) for r in relative_neigh_sources_visited]
+      rnh.sort(key=itemgetter(1))
+      return rnh[0][0]
 
-    # else:
-      # return -1
+    else:
+      return -1
 
-  def step(self):
+  def step(self, dbg=False):
 
     self.i += 1
+    dbgs = ''
 
     fractures = self.fractures
     sources = fractures.sources
@@ -95,7 +96,8 @@ class Fracture(object):
 
     if mask.sum()<1:
       self.alive = False
-      # print('no nearby sources')
+      if dbg:
+        print(self.fid, 'no nearby sources')
       return False
 
     masked_diff = neardiff[mask]
@@ -111,22 +113,35 @@ class Fracture(object):
       nonz = mask.nonzero()[0]
       h = near[nonz[ind]]
       
-      # possible relative neigh test
       if h in visited:
         # collision
+        dbgs += '{:d}: {:s}'.format(self.fid, 'collision')
         self.alive = False
 
       else: 
         # no collision
-        self.alive = True
-        visited[h] = new_dx
+
+        # this is pretty bad
+        collision = self.__find_near_fractures(c,h)
+        if collision>-1:
+          dbgs += '{:d}: {:s}'.format(self.fid, 'collision (rn)')
+          h = collision
+          self.alive = False
+        else:
+          dbgs += '{:d}: {:s}'.format(self.fid, 'no collision')
+          self.alive = True
+          visited[h] = new_dx
 
     else:
       # new source
+      dbgs += '{:d}: {:s}'.format(self.fid, 'new source')
       new_pos = cx + new_dx*fractures.frac_stp
       h = self.fractures._add_tmp_source(new_pos)
       self.alive = True
       visited[h] = new_dx
+
+    if dbg:
+      print(dbgs)
 
     self.dxs.append(new_dx)
     self.inds.append(h)
