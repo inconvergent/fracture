@@ -9,13 +9,13 @@ NMAX = 10**6
 SIZE = 1500
 ONE = 1./SIZE
 
-INIT_NUM = 100000
+INIT_NUM = 50000
 INIT_RAD = 0.45
 
-SOURCE_DST = 1.5*ONE
+SOURCE_DST = 6.0*ONE
 
 FRAC_DOT = 0.90
-FRAC_DST = 20.*ONE
+FRAC_DST = 100.*ONE
 FRAC_STP = ONE*6
 
 LINEWIDTH = ONE*1.1
@@ -23,8 +23,7 @@ LINEWIDTH = ONE*1.1
 BACK = [1,1,1,1]
 FRONT = [0,0,0,0.8]
 LIGHT = [0,0,0,0.2]
-RED = [1,0,0,0.1]
-CYAN = [0,0.5,0.5,0.05]
+CYAN = [0,0.5,0.5,0.2]
 BLUE = [0,0,1,0.3]
 
 
@@ -37,7 +36,7 @@ def show(render,fractures):
 
   def draw_sources():
     for s in sources:
-      render.circle(*s, r=ONE, fill=True)
+      render.circle(*s, r=4*ONE, fill=True)
 
   def draw_lines(fracs):
     for frac in fracs:
@@ -49,8 +48,8 @@ def show(render,fractures):
 
   render.clear_canvas()
 
-  # render.ctx.set_source_rgba(*RED)
-  # draw_sources()
+  render.ctx.set_source_rgba(*CYAN)
+  draw_sources()
 
   render.ctx.set_source_rgba(*FRONT)
   render.set_line_width(LINEWIDTH)
@@ -87,7 +86,7 @@ def main():
     show(render,F)
     F.print_stats()
     res = F.step()
-    n = F.spawn(factor=0.9, angle=0.7)
+    n = F.spawn(factor=0.1, angle=0.7)
     print('spawned: {:d}'.format(n))
 
     # from modules.utils import export_svg
