@@ -55,7 +55,6 @@ def show(render,fractures):
   render.set_line_width(LINEWIDTH)
   draw_lines(alive_fractures+dead_fractures)
 
-
   # for f in alive_fractures:
     # for s in sources[f.inds,:]:
       # render.circle(*s, r=2*ONE, fill=False)
@@ -69,15 +68,14 @@ def main():
   from modules.fracture import Fractures
 
   F = Fractures(
-    INIT_NUM, 
-    INIT_RAD, 
-    SOURCE_DST, 
-    FRAC_DOT, 
-    FRAC_DST, 
+    INIT_NUM,
+    INIT_RAD,
+    SOURCE_DST,
+    FRAC_DOT,
+    FRAC_DST,
     FRAC_STP
   )
 
-  ## init
   for _ in xrange(1):
     F.blow(10, random(size=2))
 
@@ -89,23 +87,27 @@ def main():
     n = F.spawn(factor=0.1, angle=0.7)
     print('spawned: {:d}'.format(n))
 
-    # from modules.utils import export_svg
-    # paths = F.get_fracture_paths()
-    # fn = './res/asdf_{:05d}.svg'.format(F.i)
-    # export_svg(fn, paths, SIZE)
-
-    # fn = './asdf_{:05d}.png'.format(F.i)
+    # fn = './asdf_{:04d}.png'.format(F.i)
     # render.write_to_png(fn)
+
+    # from dddUtils.ioOBJ import export_2d as export
+    # vertices, edges = F.get_vertices_and_edges()
+    # fn = './res/export.2obj'.format(F.i)
+    # export('fractures', fn, vertices, edges = edges)
 
     return res
 
   render = Animate(SIZE, BACK, FRONT, wrap)
 
-  def __write_svg_and_exit(*args):                                                                                                                                                                                                                                            
-    from modules.utils import export_svg
+  def __write_svg_and_exit(*args):
     gtk.main_quit(*args)
     render.write_to_png('./res/on_exit.png')
-    export_svg('./res/on_exit.svg', F.get_fracture_paths(), SIZE)
+
+    from dddUtils.ioOBJ import export_2d as export
+    vertices, edges = F.get_vertices_and_edges()
+    fn = './res/on_exit.2obj'.format(F.i)
+    export('fractures', fn, vertices, edges = edges)
+
   render.window.connect("destroy", __write_svg_and_exit)
 
   gtk.main()

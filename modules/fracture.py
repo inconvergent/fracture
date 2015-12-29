@@ -243,7 +243,7 @@ class Fractures(object):
 
     self.tmp_sources = []
 
-    count = 0 
+    count = 0
     for i in (random(size=len(self.alive_fractures))<factor).nonzero()[0]:
       count += int(self.make_random_alive_fracture(i, angle))
 
@@ -271,7 +271,7 @@ class Fractures(object):
     self.alive_fractures = fracs
 
     self._append_tmp_sources()
-    
+
     return len(fracs)>0
 
   def get_fracture_paths(self):
@@ -285,6 +285,18 @@ class Fractures(object):
       paths.append(path)
 
     return paths
+
+  def get_vertices_and_edges(self):
+
+    vertices = self.sources
+    edges = []
+    for f in self.alive_fractures + self.dead_fractures:
+      if len(f.inds)<2:
+        continue
+      for i in xrange(len(f.inds)-1):
+        edges.append([f.inds[i], f.inds[i+1]])
+
+    return vertices, row_stack(edges)
 
   def print_stats(self):
 
