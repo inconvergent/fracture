@@ -91,9 +91,9 @@ def main():
     # render.write_to_png(fn)
 
     # from dddUtils.ioOBJ import export_2d as export
-    # vertices, edges = F.get_vertices_and_edges()
+    # vertices, paths = F.get_vertices_and_paths()
     # fn = './res/export.2obj'.format(F.i)
-    # export('fractures', fn, vertices, edges = edges)
+    # export('fractures', fn, vertices, lines=paths)
 
     return res
 
@@ -104,9 +104,9 @@ def main():
     render.write_to_png('./res/on_exit.png')
 
     from dddUtils.ioOBJ import export_2d as export
-    vertices, edges = F.get_vertices_and_edges()
+    vertices, paths = F.get_vertices_and_paths()
     fn = './res/on_exit.2obj'.format(F.i)
-    export('fractures', fn, vertices, edges = edges)
+    export('fractures', fn, vertices, lines=paths)
 
   render.window.connect("destroy", __write_svg_and_exit)
 

@@ -286,17 +286,17 @@ class Fractures(object):
 
     return paths
 
-  def get_vertices_and_edges(self):
+  def get_vertices_and_paths(self):
 
     vertices = self.sources
-    edges = []
+    paths = []
     for f in self.alive_fractures + self.dead_fractures:
       if len(f.inds)<2:
         continue
-      for i in xrange(len(f.inds)-1):
-        edges.append([f.inds[i], f.inds[i+1]])
 
-    return vertices, row_stack(edges)
+      paths.append(array(f.inds, 'int'))
+
+    return vertices, paths
 
   def print_stats(self):
 
