@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function
+
 from numpy import pi
 from numpy import array
 from numpy import arange
@@ -13,8 +15,10 @@ from numpy import sin
 from numpy import arctan2
 from collections import defaultdict
 
+
 TWOPI = pi*2
 HPI = pi*0.5
+
 
 class Fracture(object):
 
@@ -31,42 +35,41 @@ class Fracture(object):
 
     self.fid = fid
 
-  def __find_near_fractures(self, c, h):
+  def __relative_neigh_test(self, curr, new):
 
-    from numpy import column_stack
-    from numpy import logical_not
-    from operator import itemgetter
+    from numpy import concatenate
+    from numpy import unique
+    from scipy.spatial.distance import cdist
+    from numpy.linalg import norm
 
     sources = self.fractures.sources
+    visited = self.fractures.visited
+    tri = self.fractures.tri
+    simplices = tri.simplices
+    simp = tri.find_simplex(new,bruteforce=True,tol=1e-10)
+    neigh = concatenate((tri.neighbors[simp],[simp]))
+    vv = set(list(unique(simplices[neigh,:])))
 
-    cx = sources[c,:]
-    hx = sources[h,:]
-    u = array(
-      self.tree.query_ball_point(0.5*(hx+cx),self.fractures.frac_dst),
-      'int'
-    )
+    if curr in vv:
+      vv.remove(curr)
+    vv = array(list(vv))
 
-    uc = norm(cx-sources[u,:], axis=1)
-    uh = norm(hx-sources[u,:], axis=1)
+    dist = cdist(sources[vv, :], row_stack([new,sources[curr,:]]))
+    mas = dist.max(axis=1)
 
-    ch = norm(cx-hx)
-    mm = column_stack([uc,uh]).max(axis=1)
-    mask = ch<mm
+    # curr_new = norm(new-sources[curr,:])
+    curr_new = self.fractures.frac_stp
 
-    a = set(u[logical_not(mask)])
-    b = set([c,h])
-    relative_neigh_sources = a.difference(b)
-    relative_neigh_sources_visited = relative_neigh_sources.intersection(
-      self.fractures.visited
-    )
+    free = mas<curr_new
 
-    if relative_neigh_sources_visited:
-      rnh = [ (r, norm(sources[r,:]-cx)) for r in relative_neigh_sources_visited]
-      rnh.sort(key=itemgetter(1))
-      return rnh[0][0]
-
-    else:
+    if sum(free)==0:
       return -1
+    else:
+      col = [k for k in vv[free] if k in visited]
+      if col:
+        return col[0]
+      else:
+        return -1
 
   def step(self, dbg=False):
 
@@ -105,37 +108,17 @@ class Fracture(object):
 
     new_dx = (masked_diff/masked_nrm).sum(axis=0).flatten()
     new_dx /= norm(new_dx)
+    new_pos = cx + new_dx*fractures.frac_stp
 
-    ind = masked_nrm.argmin()
+    rel = self.__relative_neigh_test(c, new_pos)
 
-    if masked_nrm[ind]<stp:
-
-      nonz = mask.nonzero()[0]
-      h = near[nonz[ind]]
-      
-      if h in visited:
-        # collision
-        dbgs += '{:d}: {:s}'.format(self.fid, 'collision')
-        self.alive = False
-
-      else: 
-        # no collision
-
-        # this is pretty bad
-        collision = self.__find_near_fractures(c,h)
-        if collision>-1:
-          dbgs += '{:d}: {:s}'.format(self.fid, 'collision (rn)')
-          h = collision
-          self.alive = False
-        else:
-          dbgs += '{:d}: {:s}'.format(self.fid, 'no collision')
-          self.alive = True
-          visited[h] = new_dx
-
+    if rel>-1:
+      dbgs += '{:d}: {:s}'.format(self.fid, 'collision (rn)')
+      h = rel
+      self.alive = False
     else:
       # new source
       dbgs += '{:d}: {:s}'.format(self.fid, 'new source')
-      new_pos = cx + new_dx*fractures.frac_stp
       h = self.fractures._add_tmp_source(new_pos)
       self.alive = True
       visited[h] = new_dx
@@ -191,12 +174,19 @@ class Fractures(object):
   def __make_sources(self):
 
     from scipy.spatial import cKDTree as kdt
-    from utils import darts
+    from scipy.spatial import Delaunay as triag
+    from dddUtils.random import darts
 
     sources = darts(self.init_num, 0.5, 0.5, self.init_rad, self.source_dst)
     tree = kdt(sources)
     self.sources = sources
     self.tree = tree
+    self.tri = triag(
+      self.sources,
+      incremental=False,
+      qhull_options='QJ Qc'
+    )
+    self.num_sources = len(self.sources)
 
     return len(sources)
 
@@ -208,12 +198,19 @@ class Fractures(object):
   def _append_tmp_sources(self):
 
     from scipy.spatial import cKDTree as kdt
+    from scipy.spatial import Delaunay as triag
 
     sources = row_stack([self.sources]+self.tmp_sources)
     tree = kdt(sources)
     self.sources = sources
     self.tree = tree
     self.tmp_sources = []
+    self.tri = triag(
+      self.sources,
+      incremental=False,
+      qhull_options='QJ Qc'
+    )
+    self.num_sources = len(self.sources)
 
     return len(sources)
 
@@ -251,7 +248,7 @@ class Fractures(object):
 
     return count
 
-  def step(self):
+  def step(self, dbg=False):
 
     self.i += 1
 
@@ -259,7 +256,7 @@ class Fractures(object):
 
     fracs = []
     for f in self.alive_fractures:
-      f.step()
+      f.step(dbg)
       if f.alive:
         fracs.append(f)
       else:

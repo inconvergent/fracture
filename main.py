@@ -5,26 +5,32 @@ from __future__ import print_function
 
 import gtk
 
-NMAX = 10**6
-SIZE = 1500
-ONE = 1./SIZE
-
-INIT_NUM = 50000
-INIT_RAD = 0.45
-
-SOURCE_DST = 6.0*ONE
-
-FRAC_DOT = 0.90
-FRAC_DST = 100.*ONE
-FRAC_STP = ONE*6
-
-LINEWIDTH = ONE*1.1
 
 BACK = [1,1,1,1]
 FRONT = [0,0,0,0.8]
 LIGHT = [0,0,0,0.2]
 CYAN = [0,0.5,0.5,0.2]
 BLUE = [0,0,1,0.3]
+
+
+NMAX = 10**6
+SIZE = 1500
+ONE = 1./SIZE
+LINEWIDTH = ONE*1.1
+
+INIT_NUM = 2000
+INIT_RAD = 0.45
+
+SOURCE_DST = 5.0*ONE
+
+FRAC_DOT = 0.96
+FRAC_DST = 50.*ONE
+FRAC_STP = ONE*4
+
+
+SPAWN_ANGLE = 0.7
+SPAWN_FACTOR = 0.8
+
 
 
 
@@ -36,7 +42,7 @@ def show(render,fractures):
 
   def draw_sources():
     for s in sources:
-      render.circle(*s, r=4*ONE, fill=True)
+      render.circle(*s, r=3*ONE, fill=True)
 
   def draw_lines(fracs):
     for frac in fracs:
@@ -48,8 +54,8 @@ def show(render,fractures):
 
   render.clear_canvas()
 
-  render.ctx.set_source_rgba(*CYAN)
-  draw_sources()
+  # render.ctx.set_source_rgba(*CYAN)
+  # draw_sources()
 
   render.ctx.set_source_rgba(*FRONT)
   render.set_line_width(LINEWIDTH)
@@ -76,15 +82,17 @@ def main():
     FRAC_STP
   )
 
-  for _ in xrange(1):
-    F.blow(10, random(size=2))
+  for _ in xrange(3):
+    F.blow(2, random(size=2))
 
   def wrap(render):
 
-    show(render,F)
+    if F.i % 5 == 0:
+      show(render,F)
+
     F.print_stats()
-    res = F.step()
-    n = F.spawn(factor=0.1, angle=0.7)
+    res = F.step(dbg=True)
+    n = F.spawn(factor=SPAWN_FACTOR, angle=SPAWN_ANGLE)
     print('spawned: {:d}'.format(n))
 
     # fn = './asdf_{:04d}.png'.format(F.i)
@@ -101,6 +109,7 @@ def main():
 
   def __write_svg_and_exit(*args):
     gtk.main_quit(*args)
+    show(render,F)
     render.write_to_png('./res/on_exit.png')
 
     from dddUtils.ioOBJ import export_2d as export
