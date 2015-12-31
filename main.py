@@ -14,22 +14,22 @@ BLUE = [0,0,1,0.3]
 
 
 NMAX = 10**6
-SIZE = 1500
+SIZE = 800
 ONE = 1./SIZE
 LINEWIDTH = ONE*1.1
 
-INIT_NUM = 2000
+INIT_NUM = 900
 INIT_RAD = 0.45
 
-SOURCE_DST = 5.0*ONE
+SOURCE_DST = 3.0*ONE
 
-FRAC_DOT = 0.96
+FRAC_DOT = 0.90
 FRAC_DST = 50.*ONE
 FRAC_STP = ONE*4
 
 
-SPAWN_ANGLE = 0.7
-SPAWN_FACTOR = 0.8
+SPAWN_ANGLE = 0.5
+SPAWN_FACTOR = 0.7
 
 
 
@@ -57,9 +57,14 @@ def show(render,fractures):
   # render.ctx.set_source_rgba(*CYAN)
   # draw_sources()
 
+  render.ctx.set_source_rgba(*LIGHT)
+  render.set_line_width(3*LINEWIDTH)
+  draw_lines(alive_fractures+dead_fractures)
+
   render.ctx.set_source_rgba(*FRONT)
   render.set_line_width(LINEWIDTH)
   draw_lines(alive_fractures+dead_fractures)
+
 
   # for f in alive_fractures:
     # for s in sources[f.inds,:]:
