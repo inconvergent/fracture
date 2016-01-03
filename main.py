@@ -14,23 +14,24 @@ BLUE = [0,0,1,0.3]
 
 
 NMAX = 10**6
-SIZE = 800
+SIZE = 1400
 ONE = 1./SIZE
 LINEWIDTH = ONE*1.1
 
-INIT_NUM = 900
+INIT_NUM = 20000
 INIT_RAD = 0.45
 
 SOURCE_DST = 3.0*ONE
 
-FRAC_DOT = 0.90
-FRAC_DST = 50.*ONE
-FRAC_STP = ONE*4
+FRAC_DOT = 0.98
+FRAC_DST = 80.*ONE
+FRAC_STP = ONE*3
+FRAC_SPD = 1.0
+FRAC_DIMINISH = 1.0 - 1.e-3
 
 
-SPAWN_ANGLE = 0.5
-SPAWN_FACTOR = 0.7
-
+SPAWN_ANGLE = 1.0
+SPAWN_FACTOR = 0.95
 
 
 
@@ -41,8 +42,9 @@ def show(render,fractures):
   dead_fractures = fractures.dead_fractures
 
   def draw_sources():
-    for s in sources:
-      render.circle(*s, r=3*ONE, fill=True)
+    for i,s in enumerate(sources):
+      if i not in fractures.visited:
+        render.circle(*s, r=4*ONE, fill=True)
 
   def draw_lines(fracs):
     for frac in fracs:
@@ -54,7 +56,7 @@ def show(render,fractures):
 
   render.clear_canvas()
 
-  # render.ctx.set_source_rgba(*CYAN)
+  # render.ctx.set_source_rgba(*LIGHT)
   # draw_sources()
 
   render.ctx.set_source_rgba(*LIGHT)
@@ -64,7 +66,6 @@ def show(render,fractures):
   render.ctx.set_source_rgba(*FRONT)
   render.set_line_width(LINEWIDTH)
   draw_lines(alive_fractures+dead_fractures)
-
 
   # for f in alive_fractures:
     # for s in sources[f.inds,:]:
@@ -84,7 +85,9 @@ def main():
     SOURCE_DST,
     FRAC_DOT,
     FRAC_DST,
-    FRAC_STP
+    FRAC_STP,
+    FRAC_SPD,
+    FRAC_DIMINISH
   )
 
   for _ in xrange(3):
@@ -92,12 +95,13 @@ def main():
 
   def wrap(render):
 
-    if F.i % 5 == 0:
+    if F.i % 2 == 0:
       show(render,F)
+      # render.write_to_png('{:04d}.png'.format(F.i))
 
     F.print_stats()
     res = F.step(dbg=True)
-    n = F.spawn(factor=SPAWN_FACTOR, angle=SPAWN_ANGLE)
+    n = F.spawn_front(factor=SPAWN_FACTOR, angle=SPAWN_ANGLE)
     print('spawned: {:d}'.format(n))
 
     # fn = './asdf_{:04d}.png'.format(F.i)

@@ -22,11 +22,21 @@ HPI = pi*0.5
 
 class Fracture(object):
 
-  def __init__(self, fractures, fid, start, dx):
+  def __init__(
+      self,
+      fractures,
+      fid,
+      start,
+      dx,
+      frac_spd,
+      frac_diminish
+    ):
 
     self.i = 0
     self.fractures = fractures
     self.tree = fractures.tree
+    self.frac_spd = frac_spd
+    self.frac_diminish = frac_diminish
 
     self.start = start
     self.inds = [start]
@@ -74,6 +84,8 @@ class Fracture(object):
   def step(self, dbg=False):
 
     self.i += 1
+    self.frac_spd *= self.frac_diminish
+
     dbgs = ''
 
     fractures = self.fractures
@@ -140,7 +152,10 @@ class Fractures(object):
       source_dst,
       frac_dot,
       frac_dst,
-      frac_stp
+      frac_stp,
+      frac_spd=1.0,
+      frac_diminish=1.0,
+      domain='rect'
     ):
 
     self.i = 0
@@ -150,6 +165,8 @@ class Fractures(object):
     self.frac_dot = frac_dot
     self.frac_dst = frac_dst
     self.frac_stp = frac_stp
+    self.frac_spd = frac_spd
+    self.frac_diminish = frac_diminish
 
     self.alive_fractures = []
     self.dead_fractures = []
@@ -159,7 +176,7 @@ class Fractures(object):
     self.count = 0
 
     self.tmp_sources = []
-    self.__make_sources()
+    self.__make_sources(domain=domain)
 
   def blow(self,n, x=array([0.5,0.5])):
 
@@ -167,17 +184,39 @@ class Fractures(object):
 
     for a in random(size=n)*TWOPI:
       dx = array([cos(a), sin(a)])
-      self.__make_fracture(x, dx)
+      self.__make_fracture(x=x, dx=dx)
 
     self._append_tmp_sources()
 
-  def __make_sources(self):
+  def __make_sources(self, xx=0.5, yy=0.5, rad=None, domain='rect'):
 
     from scipy.spatial import cKDTree as kdt
     from scipy.spatial import Delaunay as triag
     from dddUtils.random import darts
+    from dddUtils.random import darts_rect
 
-    sources = darts(self.init_num, 0.5, 0.5, self.init_rad, self.source_dst)
+    if rad is None:
+      rad = self.init_rad
+
+    if domain=='circ':
+      sources = darts(
+        self.init_num,
+        xx,
+        yy,
+        self.init_rad,
+        rad
+      )
+    elif domain=='rect':
+      sources = darts_rect(
+        self.init_num,
+        xx,
+        yy,
+        2*rad,
+        2*rad,
+        self.source_dst
+      )
+    else:
+      raise ValueError('domain must be "rect" or "circ".')
     tree = kdt(sources)
     self.sources = sources
     self.tree = tree
@@ -214,35 +253,71 @@ class Fractures(object):
 
     return len(sources)
 
-  def __make_fracture(self, x, dx):
+  def __make_fracture(self, x=None, p=None, dx=None, spd=None):
 
-    _,p = self.tree.query(x,1)
-    f = Fracture(self,self.count,p,dx)
+    if p is None:
+      _,p = self.tree.query(x,1)
+
+    if spd is None:
+      spd = self.frac_spd
+
+    f = Fracture(
+      self,
+      self.count,
+      p,
+      dx,
+      spd,
+      self.frac_diminish
+    )
     self.count += 1
     res = f.step()
     if res:
       self.alive_fractures.append(f)
     return res
 
-  def make_random_alive_fracture(self, i, angle=0):
+  # def spawn_front(self, factor=1.0, angle=0.7):
+
+    # if not self.alive_fractures:
+      # return 0
+
+    # self.tmp_sources = []
+    # count = 0
+
+    # for i in (random(size=len(self.alive_fractures))<factor).nonzero()[0]:
+      # f = self.alive_fractures[i]
+      # dx = f.dxs[-1]
+      # a = arctan2(dx[1], dx[0]) + (-1)**randint(2)*HPI + (0.5-random()) * angle
+      # count += int(self.__make_fracture(p=f.inds[-1], dx=array([cos(a), sin(a)])))
+
+    # self._append_tmp_sources()
+
+    # return count
+
+  def spawn_front(self, factor=1.0, angle=0.7):
 
     if not self.alive_fractures:
-      return False
-
-    dx = self.alive_fractures[i].dxs[-1]
-    a = arctan2(dx[1], dx[0])
-    x = self.sources[self.alive_fractures[i].inds[-1],:]
-
-    a1 = a + (-1)**randint(2)*HPI + (0.5-random()) * angle
-    return self.__make_fracture(x=x, dx=array([cos(a1), sin(a1)]))
-
-  def spawn(self, factor, angle=0.7):
+      return 0
 
     self.tmp_sources = []
-
     count = 0
-    for i in (random(size=len(self.alive_fractures))<factor).nonzero()[0]:
-      count += int(self.make_random_alive_fracture(i, angle))
+
+    for i,rnd in enumerate(random(size=len(self.alive_fractures))):
+      f = self.alive_fractures[i]
+
+      if rnd>f.frac_spd*factor:
+        continue
+
+      print(f.frac_spd*factor)
+
+      dx = f.dxs[-1]
+      a = arctan2(dx[1], dx[0]) + (-1)**randint(2)*HPI + (0.5-random()) * angle
+      count += int(
+        self.__make_fracture(
+          p=f.inds[-1],
+          dx=array([cos(a), sin(a)]),
+          spd=f.frac_spd*0.8
+        )
+      )
 
     self._append_tmp_sources()
 
