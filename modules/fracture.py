@@ -4,8 +4,6 @@ from __future__ import print_function
 
 from numpy import pi
 from numpy import array
-from numpy import arange
-from numpy import reshape
 from numpy import row_stack
 from numpy.random import random
 from numpy.random import randint
@@ -13,7 +11,6 @@ from numpy.linalg import norm
 from numpy import cos
 from numpy import sin
 from numpy import arctan2
-from collections import defaultdict
 
 
 TWOPI = pi*2
@@ -120,7 +117,7 @@ class Fracture(object):
 
     new_dx = (masked_diff/masked_nrm).sum(axis=0).flatten()
     new_dx /= norm(new_dx)
-    new_pos = cx + new_dx*fractures.frac_stp
+    new_pos = cx + new_dx*stp
 
     rel = self.__relative_neigh_test(c, new_pos)
 
@@ -146,27 +143,29 @@ class Fracture(object):
 class Fractures(object):
 
   def __init__(
-      self, 
-      init_num, 
-      init_rad, 
+      self,
+      init_num,
+      init_rad,
       source_dst,
       frac_dot,
       frac_dst,
       frac_stp,
       frac_spd=1.0,
       frac_diminish=1.0,
+      frac_spawn_diminish=1.0,
       domain='rect'
     ):
 
     self.i = 0
     self.init_num = init_num
     self.init_rad = init_rad
-    self.source_dst = source_dst 
+    self.source_dst = source_dst
     self.frac_dot = frac_dot
     self.frac_dst = frac_dst
     self.frac_stp = frac_stp
     self.frac_spd = frac_spd
     self.frac_diminish = frac_diminish
+    self.spawn_diminish = frac_spawn_diminish
 
     self.alive_fractures = []
     self.dead_fractures = []
@@ -204,7 +203,7 @@ class Fractures(object):
         xx,
         yy,
         self.init_rad,
-        rad
+        self.source_dst
       )
     elif domain=='rect':
       sources = darts_rect(
@@ -307,15 +306,13 @@ class Fractures(object):
       if rnd>f.frac_spd*factor:
         continue
 
-      print(f.frac_spd*factor)
-
       dx = f.dxs[-1]
       a = arctan2(dx[1], dx[0]) + (-1)**randint(2)*HPI + (0.5-random()) * angle
       count += int(
         self.__make_fracture(
           p=f.inds[-1],
           dx=array([cos(a), sin(a)]),
-          spd=f.frac_spd*0.8
+          spd=f.frac_spd*self.spawn_diminish
         )
       )
 
