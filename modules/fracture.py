@@ -47,7 +47,6 @@ class Fracture(object):
     from numpy import concatenate
     from numpy import unique
     from scipy.spatial.distance import cdist
-    from numpy.linalg import norm
 
     sources = self.fractures.sources
     visited = self.fractures.visited
