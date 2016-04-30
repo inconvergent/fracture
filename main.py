@@ -3,8 +3,6 @@
 
 from __future__ import print_function
 
-import gtk
-
 
 BACK = [1,1,1,1]
 FRONT = [0,0,0,0.8]
@@ -23,17 +21,17 @@ INIT_RAD = 0.45
 
 SOURCE_DST = 2.0*ONE
 
-FRAC_DOT = 0.99
-FRAC_DST = 200.*ONE
-FRAC_STP = ONE*3
+FRAC_DOT = 0.9
+FRAC_DST = 100.*ONE
+FRAC_STP = ONE*2
 FRAC_SPD = 1.0
 
-FRAC_DIMINISH = 1.0
-FRAC_SPAWN_DIMINISH = 1.0
+FRAC_DIMINISH = 0.999
+FRAC_SPAWN_DIMINISH = 0.85
 
 
-SPAWN_ANGLE = 2
-SPAWN_FACTOR = 0.8
+SPAWN_ANGLE = 2.0
+SPAWN_FACTOR = 0.2
 
 
 
@@ -79,6 +77,7 @@ def random_uniform_circle(rad, num):
   from numpy.linalg import norm
   from numpy import array
 
+
   while True:
     xy = 0.5-random(size=2)
     if norm(xy)>1.0:
@@ -93,6 +92,10 @@ def main():
   from render.render import Animate
   from modules.fracture import Fractures
 
+  from dddUtils.ioOBJ import export_2d as export
+  from fn import Fn
+  fn = Fn(prefix='./res/',postfix='.2obj')
+
   F = Fractures(
     INIT_NUM,
     INIT_RAD,
@@ -103,54 +106,44 @@ def main():
     FRAC_SPD,
     FRAC_DIMINISH,
     FRAC_SPAWN_DIMINISH,
-    domain = 'circ'
+    domain = 'rect'
   )
 
+  print(F.sources.shape)
+
   # uniform square distribution
-  # from numpy.random import random
-  # for _ in xrange(3):
-    # F.blow(2, random(size=2))
+  from numpy.random import random
+  for _ in xrange(5):
+    F.blow(2, random(size=2))
 
   # uniform circular distribution
-  for _ in xrange(5):
-    F.blow(3, random_uniform_circle(INIT_RAD, num=1))
+  # for _ in xrange(5):
+    # F.blow(3, random_uniform_circle(INIT_RAD, num=1))
 
   def wrap(render):
 
     if F.i % 5 == 0:
       show(render,F)
+      vertices, paths = F.get_vertices_and_paths()
+      export('fractures', fn.name(), vertices, lines=paths)
       # render.write_to_png('{:04d}.png'.format(F.i))
 
     F.print_stats()
-    res = F.step(dbg=True)
+    res = F.step(dbg=False)
     n = F.spawn_front(factor=SPAWN_FACTOR, angle=SPAWN_ANGLE)
     print('spawned: {:d}'.format(n))
 
     # fn = './asdf_{:04d}.png'.format(F.i)
     # render.write_to_png(fn)
 
-    # from dddUtils.ioOBJ import export_2d as export
-    # vertices, paths = F.get_vertices_and_paths()
-    # fn = './res/export.2obj'.format(F.i)
-    # export('fractures', fn, vertices, lines=paths)
+    if not res:
+      vertices, paths = F.get_vertices_and_paths()
+      export('fractures', fn.name(), vertices, lines=paths)
 
     return res
 
   render = Animate(SIZE, BACK, FRONT, wrap)
-
-  def __write_svg_and_exit(*args):
-    gtk.main_quit(*args)
-    show(render,F)
-    render.write_to_png('./res/on_exit.png')
-
-    from dddUtils.ioOBJ import export_2d as export
-    vertices, paths = F.get_vertices_and_paths()
-    fn = './res/on_exit.2obj'.format(F.i)
-    export('fractures', fn, vertices, lines=paths)
-
-  render.window.connect("destroy", __write_svg_and_exit)
-
-  gtk.main()
+  render.start()
 
 
 if __name__ == '__main__':
