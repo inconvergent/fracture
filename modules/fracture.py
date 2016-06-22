@@ -27,7 +27,7 @@ class Fracture(object):
       dx,
       frac_spd,
       frac_diminish
-    ):
+      ):
 
     self.i = 0
     self.fractures = fractures
@@ -153,7 +153,7 @@ class Fractures(object):
       frac_diminish=1.0,
       frac_spawn_diminish=1.0,
       domain='rect'
-    ):
+      ):
 
     self.i = 0
     self.init_num = init_num
@@ -186,6 +186,16 @@ class Fractures(object):
 
     self._append_tmp_sources()
 
+  def crack(self, x, dx):
+
+    self.tmp_sources = []
+    self._add_tmp_source(x)
+    self._append_tmp_sources()
+
+    self.tmp_sources = []
+    self.__make_fracture(x=x, dx=dx)
+    self._append_tmp_sources()
+
   def __make_sources(self, xx=0.5, yy=0.5, rad=None, domain='rect'):
 
     from scipy.spatial import cKDTree as kdt
@@ -198,31 +208,31 @@ class Fractures(object):
 
     if domain=='circ':
       sources = darts(
-        self.init_num,
-        xx,
-        yy,
-        self.init_rad,
-        self.source_dst
-      )
+          self.init_num,
+          xx,
+          yy,
+          self.init_rad,
+          self.source_dst
+          )
     elif domain=='rect':
       sources = darts_rect(
-        self.init_num,
-        xx,
-        yy,
-        2*rad,
-        2*rad,
-        self.source_dst
-      )
+          self.init_num,
+          xx,
+          yy,
+          2*rad,
+          2*rad,
+          self.source_dst
+          )
     else:
       raise ValueError('domain must be "rect" or "circ".')
     tree = kdt(sources)
     self.sources = sources
     self.tree = tree
     self.tri = triag(
-      self.sources,
-      incremental=False,
-      qhull_options='QJ Qc'
-    )
+        self.sources,
+        incremental=False,
+        qhull_options='QJ Qc'
+        )
     self.num_sources = len(self.sources)
 
     return len(sources)
@@ -243,10 +253,10 @@ class Fractures(object):
     self.tree = tree
     self.tmp_sources = []
     self.tri = triag(
-      self.sources,
-      incremental=False,
-      qhull_options='QJ Qc'
-    )
+        self.sources,
+        incremental=False,
+        qhull_options='QJ Qc'
+        )
     self.num_sources = len(self.sources)
 
     return len(sources)
@@ -260,36 +270,18 @@ class Fractures(object):
       spd = self.frac_spd
 
     f = Fracture(
-      self,
-      self.count,
-      p,
-      dx,
-      spd,
-      self.frac_diminish
-    )
+        self,
+        self.count,
+        p,
+        dx,
+        spd,
+        self.frac_diminish
+        )
     self.count += 1
     res = f.step()
     if res:
       self.alive_fractures.append(f)
     return res
-
-  # def spawn_front(self, factor=1.0, angle=0.7):
-
-    # if not self.alive_fractures:
-      # return 0
-
-    # self.tmp_sources = []
-    # count = 0
-
-    # for i in (random(size=len(self.alive_fractures))<factor).nonzero()[0]:
-      # f = self.alive_fractures[i]
-      # dx = f.dxs[-1]
-      # a = arctan2(dx[1], dx[0]) + (-1)**randint(2)*HPI + (0.5-random()) * angle
-      # count += int(self.__make_fracture(p=f.inds[-1], dx=array([cos(a), sin(a)])))
-
-    # self._append_tmp_sources()
-
-    # return count
 
   def spawn_front(self, factor=1.0, angle=0.7):
 
@@ -308,14 +300,13 @@ class Fractures(object):
       dx = f.dxs[-1]
       a = arctan2(dx[1], dx[0]) + (-1)**randint(2)*HPI + (0.5-random()) * angle
       count += int(
-        self.__make_fracture(
-          p=f.inds[-1],
-          dx=array([cos(a), sin(a)]),
-          spd=f.frac_spd*self.spawn_diminish
-        )
-      )
-
-    self._append_tmp_sources()
+          self.__make_fracture(
+            p=f.inds[-1],
+            dx=array([cos(a), sin(a)]),
+            spd=f.frac_spd*self.spawn_diminish
+            )
+          )
+      self._append_tmp_sources()
 
     return count
 
@@ -371,6 +362,6 @@ class Fractures(object):
     alive = len(self.alive_fractures)
     dead = len(self.dead_fractures)
     print('# {:d} a: {:d} d: {:d} s: {:d}\n'
-      .format(self.i, alive, dead, len(self.sources))
-    )
+        .format(self.i, alive, dead, len(self.sources))
+        )
 

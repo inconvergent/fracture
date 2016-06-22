@@ -3,6 +3,11 @@
 
 from __future__ import print_function
 
+from numpy import pi
+from numpy import cos
+from numpy import sin
+from numpy import array
+
 
 BACK = [1,1,1,1]
 FRONT = [0,0,0,0.8]
@@ -12,21 +17,22 @@ BLUE = [0,0,1,0.3]
 
 
 NMAX = 10**6
-SIZE = 1500
+SIZE = 1000
 ONE = 1./SIZE
 LINEWIDTH = ONE*1.1
 
 INIT_NUM = 20000
 INIT_RAD = 0.45
+EDGE = 0.5-INIT_RAD
 
 SOURCE_DST = 2.0*ONE
 
-FRAC_DOT = 0.9
+FRAC_DOT = 0.95
 FRAC_DST = 100.*ONE
-FRAC_STP = ONE*2
+FRAC_STP = ONE
 FRAC_SPD = 1.0
 
-FRAC_DIMINISH = 0.999
+FRAC_DIMINISH = 1.0
 FRAC_SPAWN_DIMINISH = 0.85
 
 
@@ -67,24 +73,20 @@ def show(render,fractures):
   render.set_line_width(LINEWIDTH)
   draw_lines(alive_fractures+dead_fractures)
 
+  render.ctx.set_source_rgba(*FRONT)
+  render.set_line_width(4*LINEWIDTH)
+  render.ctx.move_to(1.0-EDGE, 1.0-EDGE)
+  render.ctx.line_to(1.0-EDGE, EDGE)
+  render.ctx.line_to(EDGE, EDGE)
+  render.ctx.line_to(EDGE, 1.0-EDGE)
+  render.ctx.close_path()
+  render.ctx.stroke()
+
+
+
   # for f in alive_fractures:
     # for s in sources[f.inds,:]:
       # render.circle(*s, r=2*ONE, fill=False)
-
-def random_uniform_circle(rad, num):
-
-  from numpy.random import random
-  from numpy.linalg import norm
-  from numpy import array
-
-
-  while True:
-    xy = 0.5-random(size=2)
-    if norm(xy)>1.0:
-      continue
-    r = array([0.5]*2)+xy*rad
-    return r
-
 
 
 def main():
@@ -97,48 +99,49 @@ def main():
   fn = Fn(prefix='./res/',postfix='.2obj')
 
   F = Fractures(
-    INIT_NUM,
-    INIT_RAD,
-    SOURCE_DST,
-    FRAC_DOT,
-    FRAC_DST,
-    FRAC_STP,
-    FRAC_SPD,
-    FRAC_DIMINISH,
-    FRAC_SPAWN_DIMINISH,
-    domain = 'rect'
-  )
+      INIT_NUM,
+      INIT_RAD,
+      SOURCE_DST,
+      FRAC_DOT,
+      FRAC_DST,
+      FRAC_STP,
+      FRAC_SPD,
+      FRAC_DIMINISH,
+      FRAC_SPAWN_DIMINISH,
+      domain = 'rect'
+      )
 
   print(F.sources.shape)
 
-  # uniform square distribution
   from numpy.random import random
-  for _ in xrange(5):
-    F.blow(2, random(size=2))
+  for _ in xrange(60):
+    a = -pi*0.5
+    dx = array([cos(a), sin(a)])
+    x = [EDGE + random()*2*INIT_RAD, 1.0-EDGE]
+    F.crack(x, dx)
 
-  # uniform circular distribution
-  # for _ in xrange(5):
-    # F.blow(3, random_uniform_circle(INIT_RAD, num=1))
+  for _ in xrange(60):
+    a = pi*0.5
+    dx = array([cos(a), sin(a)])
+    x = [EDGE + random()*2*INIT_RAD, EDGE]
+    F.crack(x, dx)
 
   def wrap(render):
 
     if F.i % 5 == 0:
       show(render,F)
       vertices, paths = F.get_vertices_and_paths()
-      export('fractures', fn.name(), vertices, lines=paths)
+      # export('fractures', fn.name(), vertices, lines=paths)
       # render.write_to_png('{:04d}.png'.format(F.i))
 
     F.print_stats()
     res = F.step(dbg=False)
-    n = F.spawn_front(factor=SPAWN_FACTOR, angle=SPAWN_ANGLE)
-    print('spawned: {:d}'.format(n))
-
-    # fn = './asdf_{:04d}.png'.format(F.i)
-    # render.write_to_png(fn)
 
     if not res:
-      vertices, paths = F.get_vertices_and_paths()
-      export('fractures', fn.name(), vertices, lines=paths)
+      # vertices, paths = F.get_vertices_and_paths()
+      # export('fractures', fn.name(), vertices, lines=paths)
+      show(render,F)
+      render.write_to_png(fn.name()+'.png')
 
     return res
 
