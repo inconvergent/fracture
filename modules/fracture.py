@@ -306,7 +306,8 @@ class Fractures(object):
             spd=f.frac_spd*self.spawn_diminish
             )
           )
-      self._append_tmp_sources()
+
+    self._append_tmp_sources()
 
     return count
 

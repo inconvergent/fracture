@@ -11,24 +11,25 @@ from numpy import array
 
 BACK = [1,1,1,1]
 FRONT = [0,0,0,0.8]
+BLACK = [0,0,0,1]
 LIGHT = [0,0,0,0.2]
 CYAN = [0,0.5,0.5,0.2]
 BLUE = [0,0,1,0.3]
 
 
 NMAX = 10**6
-SIZE = 1000
+SIZE = 2000
 ONE = 1./SIZE
-LINEWIDTH = ONE*1.1
+LINEWIDTH = ONE*3
 
-INIT_NUM = 20000
+INIT_NUM = 30000
 INIT_RAD = 0.45
 EDGE = 0.5-INIT_RAD
 
-SOURCE_DST = 2.0*ONE
+SOURCE_DST = 4.0*ONE
 
-FRAC_DOT = 0.95
-FRAC_DST = 100.*ONE
+FRAC_DOT = 0.992
+FRAC_DST = 150.*ONE
 FRAC_STP = ONE
 FRAC_SPD = 1.0
 
@@ -65,16 +66,12 @@ def show(render,fractures):
   # render.ctx.set_source_rgba(*LIGHT)
   # draw_sources()
 
-  render.ctx.set_source_rgba(*LIGHT)
-  render.set_line_width(3*LINEWIDTH)
-  draw_lines(alive_fractures+dead_fractures)
-
   render.ctx.set_source_rgba(*FRONT)
   render.set_line_width(LINEWIDTH)
   draw_lines(alive_fractures+dead_fractures)
 
-  render.ctx.set_source_rgba(*FRONT)
-  render.set_line_width(4*LINEWIDTH)
+  render.ctx.set_source_rgba(*BLACK)
+  render.set_line_width(6*LINEWIDTH)
   render.ctx.move_to(1.0-EDGE, 1.0-EDGE)
   render.ctx.line_to(1.0-EDGE, EDGE)
   render.ctx.line_to(EDGE, EDGE)
@@ -83,18 +80,12 @@ def show(render,fractures):
   render.ctx.stroke()
 
 
-
-  # for f in alive_fractures:
-    # for s in sources[f.inds,:]:
-      # render.circle(*s, r=2*ONE, fill=False)
-
-
 def main():
 
   from render.render import Animate
   from modules.fracture import Fractures
 
-  from dddUtils.ioOBJ import export_2d as export
+  # from dddUtils.ioOBJ import export_2d as export
   from fn import Fn
   fn = Fn(prefix='./res/',postfix='.2obj')
 
@@ -114,21 +105,33 @@ def main():
   print(F.sources.shape)
 
   from numpy.random import random
-  for _ in xrange(60):
+  for _ in xrange(150):
     a = -pi*0.5
     dx = array([cos(a), sin(a)])
     x = [EDGE + random()*2*INIT_RAD, 1.0-EDGE]
     F.crack(x, dx)
 
-  for _ in xrange(60):
+  for _ in xrange(70):
     a = pi*0.5
     dx = array([cos(a), sin(a)])
     x = [EDGE + random()*2*INIT_RAD, EDGE]
     F.crack(x, dx)
 
+  # for _ in xrange(70):
+  #   a = 0
+  #   dx = array([cos(a), sin(a)])
+  #   x = [EDGE, EDGE + random()*2*INIT_RAD]
+  #   F.crack(x, dx)
+  #
+  # for _ in xrange(70):
+  #   a = pi
+  #   dx = array([cos(a), sin(a)])
+  #   x = [1.0-EDGE, EDGE + random()*2*INIT_RAD]
+  #   F.crack(x, dx)
+
   def wrap(render):
 
-    if F.i % 5 == 0:
+    if F.i % 20 == 0:
       show(render,F)
       vertices, paths = F.get_vertices_and_paths()
       # export('fractures', fn.name(), vertices, lines=paths)
