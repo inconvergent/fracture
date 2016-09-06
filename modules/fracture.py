@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function
+
 
 from numpy import pi
 from numpy import array
@@ -190,8 +190,8 @@ class Fractures(object):
 
     from scipy.spatial import cKDTree as kdt
     from scipy.spatial import Delaunay as triag
-    from dddUtils.random import darts
-    from dddUtils.random import darts_rect
+    from iutils.random import darts
+    from iutils.random import darts_rect
 
     if rad is None:
       rad = self.init_rad

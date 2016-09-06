@@ -1,7 +1,7 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function
+
 
 
 BACK = [1,1,1,1]
@@ -12,7 +12,7 @@ BLUE = [0,0,1,0.3]
 
 
 NMAX = 10**6
-SIZE = 1500
+SIZE = 1200
 ONE = 1./SIZE
 LINEWIDTH = ONE*1.1
 
@@ -21,13 +21,13 @@ INIT_RAD = 0.45
 
 SOURCE_DST = 2.0*ONE
 
-FRAC_DOT = 0.9
+FRAC_DOT = 0.85
 FRAC_DST = 100.*ONE
 FRAC_STP = ONE*2
 FRAC_SPD = 1.0
 
-FRAC_DIMINISH = 0.999
-FRAC_SPAWN_DIMINISH = 0.85
+FRAC_DIMINISH = 0.997
+FRAC_SPAWN_DIMINISH = 0.9
 
 
 SPAWN_ANGLE = 2.0
@@ -89,10 +89,10 @@ def random_uniform_circle(rad, num):
 
 def main():
 
-  from render.render import Animate
+  from iutils.render import Animate
   from modules.fracture import Fractures
 
-  from dddUtils.ioOBJ import export_2d as export
+  # from dddUtils.ioOBJ import export_2d as export
   from fn import Fn
   fn = Fn(prefix='./res/',postfix='.2obj')
 
@@ -113,7 +113,7 @@ def main():
 
   # uniform square distribution
   from numpy.random import random
-  for _ in xrange(5):
+  for _ in range(5):
     F.blow(2, random(size=2))
 
   # uniform circular distribution
@@ -122,11 +122,11 @@ def main():
 
   def wrap(render):
 
-    if F.i % 5 == 0:
+    if not F.i % 20:
       show(render,F)
-      vertices, paths = F.get_vertices_and_paths()
-      export('fractures', fn.name(), vertices, lines=paths)
-      # render.write_to_png('{:04d}.png'.format(F.i))
+      # vertices, paths = F.get_vertices_and_paths()
+      # export('fractures', fn.name(), vertices, lines=paths)
+      render.write_to_png(fn.name()+'.png')
 
     F.print_stats()
     res = F.step(dbg=False)
@@ -136,9 +136,9 @@ def main():
     # fn = './asdf_{:04d}.png'.format(F.i)
     # render.write_to_png(fn)
 
-    if not res:
-      vertices, paths = F.get_vertices_and_paths()
-      export('fractures', fn.name(), vertices, lines=paths)
+    # if not res:
+      # vertices, paths = F.get_vertices_and_paths()
+      # export('fractures', fn.name(), vertices, lines=paths)
 
     return res
 

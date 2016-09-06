@@ -1,4 +1,4 @@
-Fracture [WIP]
+Fracture
 =============
 
 ![img](/img/img1.png?raw=true "image")
@@ -11,13 +11,16 @@ randomized seeds.
 In order for this code to run you must first download and install
 repositories:
 
-*    `render`: http://github.com/inconvergent/render
+*    `iutils`: http://github.com/inconvergent/iutils
+*    `fn`: http://github.com/inconvergent/fn-python3 (only used to generate
+     file names, can be removed in `main.py`.)
 
 ## Other Dependencies
 
 The code also depends on:
 
 *    `numpy`
+*    `scipy`
 *    `python-cairo` (do not install with pip, this generally does not work)
 
 -----------
