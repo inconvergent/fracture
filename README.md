@@ -12,7 +12,7 @@ In order for this code to run you must first download and install
 repositories:
 
 *    `iutils`: http://github.com/inconvergent/iutils
-*    `fn`: http://github.com/inconvergent/fn-python3 (only used to generate
+*    `fn`: http://github.com/inconvergent/fn (only used to generate
      file names, can be removed in `main.py`.)
 
 ## Other Dependencies
